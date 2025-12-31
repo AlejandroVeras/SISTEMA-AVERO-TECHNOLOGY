@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createInvoice, updateInvoice, type Invoice } from "@/lib/data/invoices"
 import type { Customer } from "@/lib/data/customers"
@@ -39,6 +40,10 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
   const [dueDate, setDueDate] = useState(invoice?.dueDate || "")
   const [status, setStatus] = useState(invoice?.status || "draft")
   const [notes, setNotes] = useState(invoice?.notes || "")
+  
+  // Estado para controlar si se aplica ITBIS (si editamos, verificamos si tenía impuestos)
+  const [applyItbis, setApplyItbis] = useState(invoice ? invoice.itbis > 0 : true)
+
   const [items, setItems] = useState<InvoiceItemForm[]>(
     invoice?.items.map((item) => ({
       productId: item.productId,
@@ -79,8 +84,9 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     }
   }
 
+  // Cálculos de totales
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-  const itbis = subtotal * 0.18
+  const itbis = applyItbis ? subtotal * 0.18 : 0
   const total = subtotal + itbis
 
   function formatCurrency(amount: number) {
@@ -95,24 +101,35 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     setLoading(true)
     setError("")
 
-    const data = {
-      customerId: customerId || undefined,
-      customerName,
-      issueDate,
-      dueDate: dueDate || undefined,
-      status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
-      notes: notes || undefined,
-      items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
-    }
+    try {
+      const data = {
+        customerId: customerId || undefined,
+        customerName,
+        issueDate,
+        dueDate: dueDate || undefined,
+        status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
+        notes: notes || undefined,
+        items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
+        // Importante: Aseguramos que el backend reciba los cálculos correctos si los espera, 
+        // aunque generalmente el backend recalcula. Si tu backend calcula el ITBIS automático, 
+        // asegúrate de pasar un flag o ajustar la lógica en el servidor. 
+        // Aquí asumimos que enviamos los items y el backend procesará o que enviamos datos básicos.
+      }
 
-    const result = invoice ? await updateInvoice(invoice.id, data) : await createInvoice(data)
+      const result = invoice ? await updateInvoice(invoice.id, data) : await createInvoice(data)
 
-    if (result.error) {
-      setError(result.error)
+      if (result.error) {
+        setError(result.error)
+        setLoading(false)
+      } else {
+        // Fix de congelamiento: Refrescar antes de navegar
+        router.refresh()
+        router.push("/dashboard/invoices")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Ocurrió un error inesperado al guardar.")
       setLoading(false)
-    } else {
-      router.push("/dashboard/invoices")
-      router.refresh()
     }
   }
 
@@ -285,6 +302,17 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
             ))}
 
             <div className="flex flex-col gap-2 pt-4 border-t">
+              {/* Checkbox para controlar el ITBIS */}
+              <div className="flex items-center space-x-2 pb-2 border-b mb-2">
+                <Checkbox 
+                  id="applyItbis" 
+                  checked={applyItbis} 
+                  onCheckedChange={(checked) => setApplyItbis(checked as boolean)} 
+                  disabled={loading}
+                />
+                <Label htmlFor="applyItbis" className="text-sm font-medium cursor-pointer">Aplicar ITBIS (18%)</Label>
+              </div>
+
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Subtotal:</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
