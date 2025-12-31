@@ -28,16 +28,28 @@ export function ProductForm({ product }: ProductFormProps) {
     setLoading(true)
     setError("")
 
-    const formData = new FormData(e.currentTarget)
+    try {
+      const formData = new FormData(e.currentTarget)
+      // Ajustar valor del checkbox manual si es necesario, 
+      // pero FormData suele capturarlo si tiene 'name' y está checked.
+      // Aseguramos que 'trackInventory' sea booleano para el formData si el backend lo requiere estricto
+      if (!formData.get("trackInventory")) {
+        formData.append("trackInventory", "false")
+      }
 
-    const result = product ? await updateProduct(product.id, formData) : await createProduct(formData)
+      const result = product ? await updateProduct(product.id, formData) : await createProduct(formData)
 
-    if (result.error) {
-      setError(result.error)
+      if (result.error) {
+        setError(result.error)
+        setLoading(false)
+      } else {
+        router.refresh()
+        router.push("/dashboard/products")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Error al guardar el producto")
       setLoading(false)
-    } else {
-      router.push("/dashboard/products")
-      router.refresh()
     }
   }
 
