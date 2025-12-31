@@ -16,22 +16,24 @@ export interface Expense {
   updatedAt: Date
 }
 
-export const expenseCategories = [
-  "Servicios",
-  "Suministros de Oficina",
-  "Tecnología",
-  "Marketing",
-  "Transporte",
-  "Alimentos",
-  "Servicios Profesionales",
-  "Seguros",
-  "Alquiler",
-  "Servicios Públicos",
-  "Nómina",
-  "Impuestos",
-  "Mantenimiento",
-  "Otro",
-]
+export async function getExpenseCategories() {
+  return [
+    "Servicios",
+    "Suministros de Oficina",
+    "Tecnología",
+    "Marketing",
+    "Transporte",
+    "Alimentos",
+    "Servicios Profesionales",
+    "Seguros",
+    "Alquiler",
+    "Servicios Públicos",
+    "Nómina",
+    "Impuestos",
+    "Mantenimiento",
+    "Otro",
+  ]
+}
 
 export async function getExpenses(): Promise<Expense[]> {
   const supabase = await createClient()
