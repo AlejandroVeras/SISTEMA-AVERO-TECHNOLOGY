@@ -4,11 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 export interface User {
   id: string
   email: string
+  businessName: string
 }
-
-// In-memory storage for demo purposes (replace with database in production)
-const users: Map<string, User & { passwordHash: string }> = new Map()
-const sessions: Map<string, string> = new Map() // sessionId -> userId
 
 export async function signUp(formData: FormData) {
   const email = formData.get("email") as string
@@ -73,8 +70,27 @@ export async function getUser(): Promise<User | null> {
 
   if (error || !user) return null
 
+  // Get business name from user metadata or profiles table
+  const businessName = user.user_metadata?.business_name || user.user_metadata?.businessName
+
+  // If no business name in metadata, try to get from profiles table
+  if (!businessName) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('business_name')
+      .eq('id', user.id)
+      .single()
+
+    return {
+      id: user.id,
+      email: user.email!,
+      businessName: profile?.business_name || 'Mi Negocio'
+    }
+  }
+
   return {
     id: user.id,
     email: user.email!,
+    businessName: businessName
   }
 }
