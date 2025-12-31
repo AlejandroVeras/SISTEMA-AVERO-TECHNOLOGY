@@ -1,6 +1,6 @@
 "use server"
 
-import { getUser } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled"
 
@@ -32,27 +32,116 @@ export interface Invoice {
   updatedAt: Date
 }
 
-// In-memory storage for demo purposes
-const invoices: Map<string, Invoice> = new Map()
+// Counter for invoice numbers - in production, this should be in the database
 let invoiceCounter = 1
 
 export async function getInvoices(): Promise<Invoice[]> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  return Array.from(invoices.values())
-    .filter((i) => i.userId === user.id)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  const { data: invoicesData, error: invoicesError } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+
+  if (invoicesError) throw invoicesError
+
+  if (!invoicesData || invoicesData.length === 0) return []
+
+  const invoiceIds = invoicesData.map((inv) => inv.id)
+
+  const { data: itemsData, error: itemsError } = await supabase
+    .from("invoice_items")
+    .select("*")
+    .in("invoice_id", invoiceIds)
+
+  if (itemsError) throw itemsError
+
+  return invoicesData.map((inv) => ({
+    id: inv.id,
+    userId: inv.user_id,
+    customerId: inv.customer_id,
+    customerName: inv.customer_name || "",
+    invoiceNumber: inv.invoice_number,
+    issueDate: inv.issue_date,
+    dueDate: inv.due_date,
+    status: inv.status as InvoiceStatus,
+    subtotal: Number(inv.subtotal),
+    itbis: Number(inv.itbis),
+    total: Number(inv.total),
+    notes: inv.notes,
+    items: (itemsData || [])
+      .filter((item) => item.invoice_id === inv.id)
+      .map((item) => ({
+        id: item.id,
+        invoiceId: item.invoice_id,
+        productId: item.product_id,
+        description: item.description,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        total: Number(item.total),
+      })),
+    createdAt: new Date(inv.created_at),
+    updatedAt: new Date(inv.updated_at),
+  }))
 }
 
 export async function getInvoice(id: string): Promise<Invoice | null> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const invoice = invoices.get(id)
-  if (!invoice || invoice.userId !== user.id) return null
+  const { data: invoiceData, error: invoiceError } = await supabase
+    .from("invoices")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
 
-  return invoice
+  if (invoiceError || !invoiceData) return null
+
+  const { data: itemsData, error: itemsError } = await supabase
+    .from("invoice_items")
+    .select("*")
+    .eq("invoice_id", id)
+
+  if (itemsError) throw itemsError
+
+  return {
+    id: invoiceData.id,
+    userId: invoiceData.user_id,
+    customerId: invoiceData.customer_id,
+    customerName: invoiceData.customer_name || "",
+    invoiceNumber: invoiceData.invoice_number,
+    issueDate: invoiceData.issue_date,
+    dueDate: invoiceData.due_date,
+    status: invoiceData.status as InvoiceStatus,
+    subtotal: Number(invoiceData.subtotal),
+    itbis: Number(invoiceData.itbis),
+    total: Number(invoiceData.total),
+    notes: invoiceData.notes,
+    items: (itemsData || []).map((item) => ({
+      id: item.id,
+      invoiceId: item.invoice_id,
+      productId: item.product_id,
+      description: item.description,
+      quantity: Number(item.quantity),
+      unitPrice: Number(item.unit_price),
+      total: Number(item.total),
+    })),
+    createdAt: new Date(invoiceData.created_at),
+    updatedAt: new Date(invoiceData.updated_at),
+  }
 }
 
 function generateInvoiceNumber(): string {
@@ -74,51 +163,61 @@ export async function createInvoice(data: {
     unitPrice: number
   }>
 }) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
   if (!data.customerName || data.items.length === 0) {
     return { error: "Cliente y al menos un item son requeridos" }
   }
 
-  const id = crypto.randomUUID()
+  const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  const itbis = subtotal * 0.18
+  const total = subtotal + itbis
 
-  // Calculate totals
-  const items: InvoiceItem[] = data.items.map((item) => ({
-    id: crypto.randomUUID(),
-    invoiceId: id,
-    productId: item.productId,
+  const { data: invoiceData, error: invoiceError } = await supabase
+    .from("invoices")
+    .insert({
+      user_id: user.id,
+      customer_id: data.customerId || null,
+      customer_name: data.customerName,
+      invoice_number: generateInvoiceNumber(),
+      issue_date: data.issueDate,
+      due_date: data.dueDate || null,
+      status: data.status,
+      subtotal,
+      itbis,
+      total,
+      notes: data.notes || null,
+    })
+    .select()
+    .single()
+
+  if (invoiceError) {
+    return { error: invoiceError.message }
+  }
+
+  const itemsToInsert = data.items.map((item) => ({
+    invoice_id: invoiceData.id,
+    product_id: item.productId || null,
     description: item.description,
     quantity: item.quantity,
-    unitPrice: item.unitPrice,
+    unit_price: item.unitPrice,
     total: item.quantity * item.unitPrice,
   }))
 
-  const subtotal = items.reduce((sum, item) => sum + item.total, 0)
-  const itbis = subtotal * 0.18 // 18% ITBIS tax
-  const total = subtotal + itbis
+  const { error: itemsError } = await supabase.from("invoice_items").insert(itemsToInsert)
 
-  const invoice: Invoice = {
-    id,
-    userId: user.id,
-    customerId: data.customerId,
-    customerName: data.customerName,
-    invoiceNumber: generateInvoiceNumber(),
-    issueDate: data.issueDate,
-    dueDate: data.dueDate,
-    status: data.status,
-    subtotal,
-    itbis,
-    total,
-    notes: data.notes,
-    items,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  if (itemsError) {
+    await supabase.from("invoices").delete().eq("id", invoiceData.id)
+    return { error: itemsError.message }
   }
 
-  invoices.set(id, invoice)
-
-  return { success: true, id }
+  return { success: true, id: invoiceData.id }
 }
 
 export async function updateInvoice(
@@ -138,80 +237,102 @@ export async function updateInvoice(
     }>
   },
 ) {
-  const user = await getUser()
-  if (!user) throw new Error("Unauthorized")
+  const supabase = await createClient()
 
-  const invoice = invoices.get(id)
-  if (!invoice || invoice.userId !== user.id) {
-    return { error: "Factura no encontrada" }
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Unauthorized")
 
   if (!data.customerName || data.items.length === 0) {
     return { error: "Cliente y al menos un item son requeridos" }
   }
 
-  // Calculate totals
-  const items: InvoiceItem[] = data.items.map((item) => ({
-    id: crypto.randomUUID(),
-    invoiceId: id,
-    productId: item.productId,
-    description: item.description,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    total: item.quantity * item.unitPrice,
-  }))
-
-  const subtotal = items.reduce((sum, item) => sum + item.total, 0)
+  const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   const itbis = subtotal * 0.18
   const total = subtotal + itbis
 
-  const updated: Invoice = {
-    ...invoice,
-    customerId: data.customerId,
-    customerName: data.customerName,
-    issueDate: data.issueDate,
-    dueDate: data.dueDate,
-    status: data.status,
-    subtotal,
-    itbis,
-    total,
-    notes: data.notes,
-    items,
-    updatedAt: new Date(),
+  const { error: updateError } = await supabase
+    .from("invoices")
+    .update({
+      customer_id: data.customerId || null,
+      customer_name: data.customerName,
+      issue_date: data.issueDate,
+      due_date: data.dueDate || null,
+      status: data.status,
+      subtotal,
+      itbis,
+      total,
+      notes: data.notes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (updateError) {
+    return { error: updateError.message }
   }
 
-  invoices.set(id, updated)
+  await supabase.from("invoice_items").delete().eq("invoice_id", id)
+
+  const itemsToInsert = data.items.map((item) => ({
+    invoice_id: id,
+    product_id: item.productId || null,
+    description: item.description,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    total: item.quantity * item.unitPrice,
+  }))
+
+  const { error: itemsError } = await supabase.from("invoice_items").insert(itemsToInsert)
+
+  if (itemsError) {
+    return { error: itemsError.message }
+  }
 
   return { success: true }
 }
 
 export async function deleteInvoice(id: string) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const invoice = invoices.get(id)
-  if (!invoice || invoice.userId !== user.id) {
-    return { error: "Factura no encontrada" }
-  }
+  const { error } = await supabase.from("invoices").delete().eq("id", id).eq("user_id", user.id)
 
-  invoices.delete(id)
+  if (error) {
+    return { error: error.message }
+  }
 
   return { success: true }
 }
 
 export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const invoice = invoices.get(id)
-  if (!invoice || invoice.userId !== user.id) {
-    return { error: "Factura no encontrada" }
+  const { error } = await supabase
+    .from("invoices")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) {
+    return { error: error.message }
   }
-
-  invoice.status = status
-  invoice.updatedAt = new Date()
-
-  invoices.set(id, invoice)
 
   return { success: true }
 }
