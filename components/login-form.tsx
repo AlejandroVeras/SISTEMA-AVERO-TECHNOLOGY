@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { signIn } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,13 +22,22 @@ export function LoginForm() {
     setError("")
 
     const formData = new FormData(e.currentTarget)
-    const result = await signIn(formData)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
 
-    if (result.error) {
-      setError(result.error)
+    const supabase = createClient()
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (signInError) {
+      setError(signInError.message)
       setLoading(false)
     } else {
       router.push("/dashboard")
+      router.refresh()
     }
   }
 

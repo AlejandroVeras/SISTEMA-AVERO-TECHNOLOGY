@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { signUp } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,13 +22,38 @@ export function SignupForm() {
     setError("")
 
     const formData = new FormData(e.currentTarget)
-    const result = await signUp(formData)
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
+    const businessName = formData.get("businessName") as string
 
-    if (result.error) {
-      setError(result.error)
+    const supabase = createClient()
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          business_name: businessName,
+        },
+      },
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
-    } else {
-      router.push("/dashboard")
+    } else if (data.user) {
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: data.user.id,
+        business_name: businessName,
+      })
+
+      if (profileError) {
+        setError("Error al crear perfil: " + profileError.message)
+        setLoading(false)
+      } else {
+        router.push("/dashboard")
+        router.refresh()
+      }
     }
   }
 

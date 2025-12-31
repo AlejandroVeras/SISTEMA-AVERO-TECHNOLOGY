@@ -1,6 +1,6 @@
 "use server"
 
-import { getUser } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 
 export interface Product {
   id: string
@@ -17,30 +17,75 @@ export interface Product {
   updatedAt: Date
 }
 
-// In-memory storage for demo purposes
-const products: Map<string, Product> = new Map()
-
 export async function getProducts(): Promise<Product[]> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  return Array.from(products.values())
-    .filter((p) => p.userId === user.id)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+
+  return (data || []).map((p) => ({
+    id: p.id,
+    userId: p.user_id,
+    name: p.name,
+    description: p.description,
+    sku: p.sku,
+    price: Number(p.price),
+    cost: p.cost ? Number(p.cost) : undefined,
+    stockQuantity: p.stock_quantity,
+    trackInventory: p.track_inventory,
+    category: p.category,
+    createdAt: new Date(p.created_at),
+    updatedAt: new Date(p.updated_at),
+  }))
 }
 
 export async function getProduct(id: string): Promise<Product | null> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const product = products.get(id)
-  if (!product || product.userId !== user.id) return null
+  const { data, error } = await supabase.from("products").select("*").eq("id", id).eq("user_id", user.id).single()
 
-  return product
+  if (error || !data) return null
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    name: data.name,
+    description: data.description,
+    sku: data.sku,
+    price: Number(data.price),
+    cost: data.cost ? Number(data.cost) : undefined,
+    stockQuantity: data.stock_quantity,
+    trackInventory: data.track_inventory,
+    category: data.category,
+    createdAt: new Date(data.created_at),
+    updatedAt: new Date(data.updated_at),
+  }
 }
 
 export async function createProduct(formData: FormData) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
   const name = formData.get("name") as string
@@ -56,35 +101,37 @@ export async function createProduct(formData: FormData) {
     return { error: "Nombre y precio son requeridos" }
   }
 
-  const id = crypto.randomUUID()
-  const product: Product = {
-    id,
-    userId: user.id,
-    name,
-    description: description || undefined,
-    sku: sku || undefined,
-    price,
-    cost: cost ? Number.parseFloat(cost) : undefined,
-    stockQuantity,
-    trackInventory,
-    category: category || undefined,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  const { data, error } = await supabase
+    .from("products")
+    .insert({
+      user_id: user.id,
+      name,
+      description: description || null,
+      sku: sku || null,
+      price,
+      cost: cost ? Number.parseFloat(cost) : null,
+      stock_quantity: stockQuantity,
+      track_inventory: trackInventory,
+      category: category || null,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return { error: error.message }
   }
 
-  products.set(id, product)
-
-  return { success: true, id }
+  return { success: true, id: data.id }
 }
 
 export async function updateProduct(id: string, formData: FormData) {
-  const user = await getUser()
-  if (!user) throw new Error("Unauthorized")
+  const supabase = await createClient()
 
-  const product = products.get(id)
-  if (!product || product.userId !== user.id) {
-    return { error: "Producto no encontrado" }
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Unauthorized")
 
   const name = formData.get("name") as string
   const price = Number.parseFloat(formData.get("price") as string)
@@ -96,34 +143,43 @@ export async function updateProduct(id: string, formData: FormData) {
   const cost = formData.get("cost") as string
   const stockQuantity = Number.parseInt(formData.get("stockQuantity") as string) || 0
 
-  const updated: Product = {
-    ...product,
-    name,
-    description: (formData.get("description") as string) || undefined,
-    sku: (formData.get("sku") as string) || undefined,
-    price,
-    cost: cost ? Number.parseFloat(cost) : undefined,
-    stockQuantity,
-    trackInventory: formData.get("trackInventory") === "on",
-    category: (formData.get("category") as string) || undefined,
-    updatedAt: new Date(),
-  }
+  const { error } = await supabase
+    .from("products")
+    .update({
+      name,
+      description: (formData.get("description") as string) || null,
+      sku: (formData.get("sku") as string) || null,
+      price,
+      cost: cost ? Number.parseFloat(cost) : null,
+      stock_quantity: stockQuantity,
+      track_inventory: formData.get("trackInventory") === "on",
+      category: (formData.get("category") as string) || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
 
-  products.set(id, updated)
+  if (error) {
+    return { error: error.message }
+  }
 
   return { success: true }
 }
 
 export async function deleteProduct(id: string) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const product = products.get(id)
-  if (!product || product.userId !== user.id) {
-    return { error: "Producto no encontrado" }
-  }
+  const { error } = await supabase.from("products").delete().eq("id", id).eq("user_id", user.id)
 
-  products.delete(id)
+  if (error) {
+    return { error: error.message }
+  }
 
   return { success: true }
 }
