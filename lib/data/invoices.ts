@@ -175,9 +175,27 @@ export async function createInvoice(data: {
     return { error: "Cliente y al menos un item son requeridos" }
   }
 
+  // Calculate subtotal from items
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   const itbis = subtotal * 0.18
   const total = subtotal + itbis
+
+  // Get the highest invoice number to generate next one
+  const { data: lastInvoice } = await supabase
+    .from("invoices")
+    .select("invoice_number")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single()
+
+  let invoiceNumber = "INV-0001"
+  if (lastInvoice?.invoice_number) {
+    const match = lastInvoice.invoice_number.match(/INV-(\d+)/)
+    if (match) {
+      const nextNum = parseInt(match[1]) + 1
+      invoiceNumber = `INV-${String(nextNum).padStart(4, "0")}`
+    }
+  }
 
   const { data: invoiceData, error: invoiceError } = await supabase
     .from("invoices")
@@ -185,7 +203,7 @@ export async function createInvoice(data: {
       user_id: user.id,
       customer_id: data.customerId || null,
       customer_name: data.customerName,
-      invoice_number: generateInvoiceNumber(),
+      invoice_number: invoiceNumber,
       issue_date: data.issueDate,
       due_date: data.dueDate || null,
       status: data.status,
