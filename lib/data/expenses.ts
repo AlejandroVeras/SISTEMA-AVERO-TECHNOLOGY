@@ -1,6 +1,6 @@
 "use server"
 
-import { getUser } from "@/lib/auth"
+import { createClient } from "@/lib/supabase/server"
 
 export interface Expense {
   id: string
@@ -15,9 +15,6 @@ export interface Expense {
   createdAt: Date
   updatedAt: Date
 }
-
-// In-memory storage for demo purposes
-const expenses: Map<string, Expense> = new Map()
 
 export const expenseCategories = [
   "Servicios",
@@ -37,26 +34,77 @@ export const expenseCategories = [
 ]
 
 export async function getExpenses(): Promise<Expense[]> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  return Array.from(expenses.values())
-    .filter((e) => e.userId === user.id)
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("date", { ascending: false })
+
+  if (error) throw error
+
+  return (data || []).map((e) => ({
+    id: e.id,
+    userId: e.user_id,
+    category: e.category,
+    description: e.description,
+    amount: Number(e.amount),
+    date: e.date,
+    paymentMethod: e.payment_method,
+    receiptUrl: e.receipt_url,
+    notes: e.notes,
+    createdAt: new Date(e.created_at),
+    updatedAt: new Date(e.updated_at),
+  }))
 }
 
 export async function getExpense(id: string): Promise<Expense | null> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const expense = expenses.get(id)
-  if (!expense || expense.userId !== user.id) return null
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
 
-  return expense
+  if (error || !data) return null
+
+  return {
+    id: data.id,
+    userId: data.user_id,
+    category: data.category,
+    description: data.description,
+    amount: Number(data.amount),
+    date: data.date,
+    paymentMethod: data.payment_method,
+    receiptUrl: data.receipt_url,
+    notes: data.notes,
+    createdAt: new Date(data.created_at),
+    updatedAt: new Date(data.updated_at),
+  }
 }
 
 export async function createExpense(formData: FormData) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
   const category = formData.get("category") as string
@@ -70,33 +118,35 @@ export async function createExpense(formData: FormData) {
     return { error: "Categoría, descripción, monto y fecha son requeridos" }
   }
 
-  const id = crypto.randomUUID()
-  const expense: Expense = {
-    id,
-    userId: user.id,
-    category,
-    description,
-    amount,
-    date,
-    paymentMethod: paymentMethod || undefined,
-    notes: notes || undefined,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  const { data, error } = await supabase
+    .from("expenses")
+    .insert({
+      user_id: user.id,
+      category,
+      description,
+      amount,
+      date,
+      payment_method: paymentMethod || null,
+      notes: notes || null,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    return { error: error.message }
   }
 
-  expenses.set(id, expense)
-
-  return { success: true, id }
+  return { success: true, id: data.id }
 }
 
 export async function updateExpense(id: string, formData: FormData) {
-  const user = await getUser()
-  if (!user) throw new Error("Unauthorized")
+  const supabase = await createClient()
 
-  const expense = expenses.get(id)
-  if (!expense || expense.userId !== user.id) {
-    return { error: "Gasto no encontrado" }
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Unauthorized")
 
   const category = formData.get("category") as string
   const description = formData.get("description") as string
@@ -107,45 +157,63 @@ export async function updateExpense(id: string, formData: FormData) {
     return { error: "Categoría, descripción, monto y fecha son requeridos" }
   }
 
-  const updated: Expense = {
-    ...expense,
-    category,
-    description,
-    amount,
-    date,
-    paymentMethod: (formData.get("paymentMethod") as string) || undefined,
-    notes: (formData.get("notes") as string) || undefined,
-    updatedAt: new Date(),
-  }
+  const { error } = await supabase
+    .from("expenses")
+    .update({
+      category,
+      description,
+      amount,
+      date,
+      payment_method: (formData.get("paymentMethod") as string) || null,
+      notes: (formData.get("notes") as string) || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
 
-  expenses.set(id, updated)
+  if (error) {
+    return { error: error.message }
+  }
 
   return { success: true }
 }
 
 export async function deleteExpense(id: string) {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const expense = expenses.get(id)
-  if (!expense || expense.userId !== user.id) {
-    return { error: "Gasto no encontrado" }
-  }
+  const { error } = await supabase
+    .from("expenses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id)
 
-  expenses.delete(id)
+  if (error) {
+    return { error: error.message }
+  }
 
   return { success: true }
 }
 
 export async function getExpensesByCategory(): Promise<Record<string, number>> {
-  const user = await getUser()
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) throw new Error("Unauthorized")
 
-  const userExpenses = Array.from(expenses.values()).filter((e) => e.userId === user.id)
+  const expenses = await getExpenses()
 
   const byCategory: Record<string, number> = {}
 
-  for (const expense of userExpenses) {
+  for (const expense of expenses) {
     byCategory[expense.category] = (byCategory[expense.category] || 0) + expense.amount
   }
 
