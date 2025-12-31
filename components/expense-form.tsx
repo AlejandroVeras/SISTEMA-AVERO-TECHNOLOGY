@@ -36,16 +36,21 @@ export function ExpenseForm({ expense }: ExpenseFormProps) {
     setLoading(true)
     setError("")
 
-    const formData = new FormData(e.currentTarget)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = expense ? await updateExpense(expense.id, formData) : await createExpense(formData)
 
-    const result = expense ? await updateExpense(expense.id, formData) : await createExpense(formData)
-
-    if (result.error) {
-      setError(result.error)
+      if (result.error) {
+        setError(result.error)
+        setLoading(false)
+      } else {
+        router.refresh()
+        router.push("/dashboard/expenses")
+      }
+    } catch (err) {
+      console.error(err)
+      setError("Error al procesar el gasto")
       setLoading(false)
-    } else {
-      router.push("/dashboard/expenses")
-      router.refresh()
     }
   }
 
