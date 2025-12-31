@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, FileText, Eye } from "lucide-react" // Se añade Eye para ver detalles
+import { Edit, Trash2, FileText, Eye } from "lucide-react"
 import type { Invoice } from "@/lib/data/invoices"
 import { useRouter } from "next/navigation"
 import { deleteInvoice } from "@/lib/data/invoices"
@@ -32,10 +32,15 @@ export function InvoicesList({ invoices }: InvoicesListProps) {
     if (!deleteId) return
 
     setDeleting(true)
-    await deleteInvoice(deleteId)
-    setDeleting(false)
-    setDeleteId(null)
-    router.refresh()
+    try {
+      await deleteInvoice(deleteId)
+      setDeleteId(null)
+      router.refresh()
+    } catch (error) {
+      console.error("Error al eliminar factura", error)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   function formatCurrency(amount: number) {
@@ -125,7 +130,7 @@ export function InvoicesList({ invoices }: InvoicesListProps) {
                     <p className="text-xl font-bold text-slate-900">{formatCurrency(invoice.total)}</p>
                   </div>
                   <div className="flex gap-1">
-                    {/* Botón para acceder al detalle y exportar */}
+                    {/* Botón para ver detalle y acceder a exportar */}
                     <Button
                       size="icon"
                       variant="ghost"
@@ -142,12 +147,7 @@ export function InvoicesList({ invoices }: InvoicesListProps) {
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      size="icon" 
-                      variant="ghost" 
-                      title="Eliminar"
-                      onClick={() => setDeleteId(invoice.id)}
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => setDeleteId(invoice.id)}>
                       <Trash2 className="h-4 w-4 text-red-500" />
                     </Button>
                   </div>
