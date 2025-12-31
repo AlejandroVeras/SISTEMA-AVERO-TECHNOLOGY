@@ -34,8 +34,8 @@ export function CustomerForm({ customer }: CustomerFormProps) {
       setError(result.error)
       setLoading(false)
     } else {
+      // Navigate and let Next.js handle the refresh
       router.push("/dashboard/customers")
-      router.refresh()
     }
   }
 
@@ -121,7 +121,7 @@ export function CustomerForm({ customer }: CustomerFormProps) {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" asChild>
+          <Button type="button" variant="outline" asChild disabled={loading}>
             <Link href="/dashboard/customers">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Cancelar
