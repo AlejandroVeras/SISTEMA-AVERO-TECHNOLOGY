@@ -3,7 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Trash2, Receipt } from "lucide-react"
+import { Edit, Trash2, Receipt, Download } from "lucide-react" // Se importó Download
 import type { Expense } from "@/lib/data/expenses"
 import { useRouter } from "next/navigation"
 import { deleteExpense } from "@/lib/data/expenses"
@@ -28,14 +28,47 @@ export function ExpensesList({ expenses }: ExpensesListProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  // Fix: Manejo robusto de eliminación para evitar congelamiento
   async function handleDelete() {
     if (!deleteId) return
 
     setDeleting(true)
-    await deleteExpense(deleteId)
-    setDeleting(false)
-    setDeleteId(null)
-    router.refresh()
+    try {
+      await deleteExpense(deleteId)
+      setDeleteId(null)
+      router.refresh()
+    } catch (error) {
+      console.error("Error deleting expense:", error)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // Función para exportar a CSV
+  function exportExpenses() {
+    if (expenses.length === 0) return;
+
+    // Encabezados del CSV
+    const headers = "Fecha,Descripción,Categoría,Monto,Método de Pago,Notas\n";
+    
+    // Contenido del CSV
+    const csvContent = expenses.map(e => {
+        // Escapar comillas dobles y manejar comas
+        const desc = e.description?.replace(/"/g, '""') || '';
+        const cat = e.category?.replace(/"/g, '""') || '';
+        const notes = e.notes?.replace(/"/g, '""') || '';
+        return `${e.date},"${desc}","${cat}",${e.amount},"${e.paymentMethod || ''}","${notes}"`;
+    }).join("\n");
+    
+    // Crear Blob y descargar
+    const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `gastos_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   function formatCurrency(amount: number) {
@@ -53,7 +86,6 @@ export function ExpensesList({ expenses }: ExpensesListProps) {
     })
   }
 
-  // Group expenses by month
   const groupedExpenses = expenses.reduce(
     (groups, expense) => {
       const date = new Date(expense.date)
@@ -83,6 +115,13 @@ export function ExpensesList({ expenses }: ExpensesListProps) {
 
   return (
     <>
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" onClick={exportExpenses} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Exportar CSV
+        </Button>
+      </div>
+
       <div className="space-y-6">
         {Object.entries(groupedExpenses).map(([monthYear, monthExpenses]) => {
           const monthTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0)
