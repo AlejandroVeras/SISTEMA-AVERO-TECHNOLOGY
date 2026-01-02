@@ -7,6 +7,9 @@ import { QuickActions } from "@/components/quick-actions"
 import { Suspense } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 
+// Forzamos a que esta página sea dinámica y no se guarde en caché estático
+export const dynamic = "force-dynamic"
+
 function StatsLoading() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
