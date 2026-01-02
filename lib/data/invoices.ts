@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { revalidatePath } from "next/cache" // IMPORTANTE
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled"
 
@@ -144,11 +145,6 @@ export async function getInvoice(id: string): Promise<Invoice | null> {
   }
 }
 
-function generateInvoiceNumber(): string {
-  const num = invoiceCounter++
-  return `INV-${String(num).padStart(4, "0")}`
-}
-
 export async function createInvoice(data: {
   customerId?: string
   customerName: string
@@ -175,12 +171,10 @@ export async function createInvoice(data: {
     return { error: "Cliente y al menos un item son requeridos" }
   }
 
-  // Calculate subtotal from items
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   const itbis = subtotal * 0.18
   const total = subtotal + itbis
 
-  // Get the highest invoice number to generate next one
   const { data: lastInvoice } = await supabase
     .from("invoices")
     .select("invoice_number")
@@ -234,6 +228,11 @@ export async function createInvoice(data: {
     await supabase.from("invoices").delete().eq("id", invoiceData.id)
     return { error: itemsError.message }
   }
+
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath("/dashboard/reports")
 
   return { success: true, id: invoiceData.id }
 }
@@ -309,6 +308,12 @@ export async function updateInvoice(
     return { error: itemsError.message }
   }
 
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath(`/dashboard/invoices/${id}`)
+  revalidatePath("/dashboard/reports")
+
   return { success: true }
 }
 
@@ -326,6 +331,11 @@ export async function deleteInvoice(id: string) {
   if (error) {
     return { error: error.message }
   }
+
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath("/dashboard/reports")
 
   return { success: true }
 }
@@ -351,6 +361,12 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
   if (error) {
     return { error: error.message }
   }
+
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath(`/dashboard/invoices/${id}`)
+  revalidatePath("/dashboard/reports")
 
   return { success: true }
 }
