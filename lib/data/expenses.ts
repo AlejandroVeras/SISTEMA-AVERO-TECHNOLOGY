@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { revalidatePath } from "next/cache"
 
 export interface Expense {
   id: string
@@ -138,6 +139,11 @@ export async function createExpense(formData: FormData) {
     return { error: error.message }
   }
 
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/expenses")
+  revalidatePath("/dashboard/reports")
+
   return { success: true, id: data.id }
 }
 
@@ -177,6 +183,11 @@ export async function updateExpense(id: string, formData: FormData) {
     return { error: error.message }
   }
 
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/expenses")
+  revalidatePath("/dashboard/reports")
+
   return { success: true }
 }
 
@@ -198,6 +209,11 @@ export async function deleteExpense(id: string) {
   if (error) {
     return { error: error.message }
   }
+
+  // Actualizar caché
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/expenses")
+  revalidatePath("/dashboard/reports")
 
   return { success: true }
 }
