@@ -34,6 +34,30 @@ export interface Invoice {
   updatedAt: Date
 }
 
+// Función auxiliar para actualizar inventario de forma segura
+async function updateProductStock(supabase: any, productId: string, quantityChange: number) {
+  // quantityChange negativo para restar (venta), positivo para devolver (anulación/borrado)
+  
+  // 1. Obtener producto actual
+  const { data: product, error } = await supabase
+    .from("products")
+    .select("track_inventory, stock_quantity")
+    .eq("id", productId)
+    .single()
+
+  if (error || !product) return // Si no existe, ignorar
+  
+  // 2. Si rastrea inventario, actualizar
+  if (product.track_inventory) {
+    const newStock = (product.stock_quantity || 0) + quantityChange
+    
+    await supabase
+      .from("products")
+      .update({ stock_quantity: newStock })
+      .eq("id", productId)
+  }
+}
+
 export async function getInvoices(): Promise<Invoice[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -164,7 +188,6 @@ export async function createInvoice(data: {
 
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   
-  // Lógica de Descuento e Impuestos
   const discount = data.discount || 0
   const taxableAmount = Math.max(0, subtotal - discount)
   const itbis = data.applyItbis ? taxableAmount * 0.18 : 0
@@ -223,9 +246,18 @@ export async function createInvoice(data: {
     return { error: itemsError.message }
   }
 
+  // --- LÓGICA DE INVENTARIO: RESTAR STOCK ---
+  for (const item of data.items) {
+    if (item.productId) {
+      // Restamos la cantidad (usamos negativo)
+      await updateProductStock(supabase, item.productId, -item.quantity)
+    }
+  }
+
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
   revalidatePath("/dashboard/reports")
+  revalidatePath("/dashboard/products") // Actualizar vista de productos
 
   return { success: true, id: invoiceData.id }
 }
@@ -260,11 +292,26 @@ export async function updateInvoice(
 
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   
-  // Lógica de Descuento e Impuestos
   const discount = data.discount || 0
   const taxableAmount = Math.max(0, subtotal - discount)
   const itbis = data.applyItbis ? taxableAmount * 0.18 : 0
   const total = taxableAmount + itbis
+
+  // --- LÓGICA DE INVENTARIO: REVERTIR STOCK ANTERIOR ---
+  // Primero obtenemos los items que ya existían para devolver ese stock
+  const { data: oldItems } = await supabase
+    .from("invoice_items")
+    .select("product_id, quantity")
+    .eq("invoice_id", id)
+  
+  if (oldItems) {
+    for (const item of oldItems) {
+      if (item.product_id) {
+        // Devolvemos el stock (sumamos positivo)
+        await updateProductStock(supabase, item.product_id, Number(item.quantity))
+      }
+    }
+  }
 
   const { error: updateError } = await supabase
     .from("invoices")
@@ -301,10 +348,19 @@ export async function updateInvoice(
 
   if (itemsError) return { error: itemsError.message }
 
+  // --- LÓGICA DE INVENTARIO: RESTAR NUEVO STOCK ---
+  for (const item of data.items) {
+    if (item.productId) {
+      // Restamos la nueva cantidad
+      await updateProductStock(supabase, item.productId, -item.quantity)
+    }
+  }
+
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
   revalidatePath(`/dashboard/invoices/${id}`)
   revalidatePath("/dashboard/reports")
+  revalidatePath("/dashboard/products")
 
   return { success: true }
 }
@@ -315,6 +371,20 @@ export async function deleteInvoice(id: string) {
 
   if (!user) throw new Error("Unauthorized")
 
+  // --- LÓGICA DE INVENTARIO: DEVOLVER STOCK ANTES DE BORRAR ---
+  const { data: oldItems } = await supabase
+    .from("invoice_items")
+    .select("product_id, quantity")
+    .eq("invoice_id", id)
+  
+  if (oldItems) {
+    for (const item of oldItems) {
+      if (item.product_id) {
+        await updateProductStock(supabase, item.product_id, Number(item.quantity))
+      }
+    }
+  }
+
   const { error } = await supabase.from("invoices").delete().eq("id", id).eq("user_id", user.id)
 
   if (error) return { error: error.message }
@@ -322,6 +392,7 @@ export async function deleteInvoice(id: string) {
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
   revalidatePath("/dashboard/reports")
+  revalidatePath("/dashboard/products")
 
   return { success: true }
 }
