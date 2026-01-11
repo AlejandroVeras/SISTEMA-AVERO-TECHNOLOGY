@@ -41,7 +41,8 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
   const [status, setStatus] = useState(invoice?.status || "draft")
   const [notes, setNotes] = useState(invoice?.notes || "")
   
-  // Estado para controlar si se aplica ITBIS
+  // Estado para descuento y control de ITBIS
+  const [discount, setDiscount] = useState<number>(invoice?.discount || 0)
   const [applyItbis, setApplyItbis] = useState(invoice ? invoice.itbis > 0 : true)
 
   const [items, setItems] = useState<InvoiceItemForm[]>(
@@ -71,7 +72,6 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     const product = products.find((p) => p.id === productId)
     if (product) {
       updateItem(index, "productId", productId)
-      // CORRECCIÓN: Usar la descripción del producto si existe, de lo contrario usar el nombre
       updateItem(index, "description", product.description || product.name)
       updateItem(index, "unitPrice", product.price)
     }
@@ -87,8 +87,14 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
 
   // Cálculos de totales
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-  const itbis = applyItbis ? subtotal * 0.18 : 0
-  const total = subtotal + itbis
+  
+  // Base imponible = Subtotal - Descuento (no puede ser menor a 0)
+  const taxableAmount = Math.max(0, subtotal - discount)
+  
+  // ITBIS sobre el monto con descuento aplicado
+  const itbis = applyItbis ? taxableAmount * 0.18 : 0
+  
+  const total = taxableAmount + itbis
 
   function formatCurrency(amount: number) {
     return new Intl.NumberFormat("es-DO", {
@@ -110,7 +116,8 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
         dueDate: dueDate || undefined,
         status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
         notes: notes || undefined,
-        applyItbis: applyItbis, // Enviamos el estado del ITBIS al servidor
+        applyItbis: applyItbis,
+        discount: discount, // Enviar descuento
         items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
       }
 
@@ -313,6 +320,23 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                 <span className="text-slate-600">Subtotal:</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
+              
+              {/* Apartado de Descuento */}
+              <div className="flex justify-between text-sm items-center">
+                <span className="text-slate-600">Descuento:</span>
+                <div className="w-32">
+                   <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={discount}
+                    onChange={(e) => setDiscount(Number.parseFloat(e.target.value) || 0)}
+                    className="h-8 text-right"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">ITBIS (18%):</span>
                 <span className="font-medium">{formatCurrency(itbis)}</span>
