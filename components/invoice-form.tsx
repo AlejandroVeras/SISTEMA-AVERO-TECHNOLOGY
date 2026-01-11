@@ -41,7 +41,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
   const [status, setStatus] = useState(invoice?.status || "draft")
   const [notes, setNotes] = useState(invoice?.notes || "")
   
-  // Estado para controlar si se aplica ITBIS (si editamos, verificamos si tenía impuestos)
+  // Estado para controlar si se aplica ITBIS
   const [applyItbis, setApplyItbis] = useState(invoice ? invoice.itbis > 0 : true)
 
   const [items, setItems] = useState<InvoiceItemForm[]>(
@@ -71,7 +71,8 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     const product = products.find((p) => p.id === productId)
     if (product) {
       updateItem(index, "productId", productId)
-      updateItem(index, "description", product.name)
+      // CORRECCIÓN: Usar la descripción del producto si existe, de lo contrario usar el nombre
+      updateItem(index, "description", product.description || product.name)
       updateItem(index, "unitPrice", product.price)
     }
   }
@@ -109,7 +110,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
         dueDate: dueDate || undefined,
         status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
         notes: notes || undefined,
-        applyItbis: applyItbis, // Enviamos el estado del checkbox al servidor
+        applyItbis: applyItbis, // Enviamos el estado del ITBIS al servidor
         items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
       }
 
@@ -119,7 +120,6 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
         setError(result.error)
         setLoading(false)
       } else {
-        // Fix de congelamiento: Refrescar antes de navegar
         router.refresh()
         router.push("/dashboard/invoices")
       }
@@ -299,7 +299,6 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
             ))}
 
             <div className="flex flex-col gap-2 pt-4 border-t">
-              {/* Checkbox para controlar el ITBIS */}
               <div className="flex items-center space-x-2 pb-2 border-b mb-2">
                 <Checkbox 
                   id="applyItbis" 
