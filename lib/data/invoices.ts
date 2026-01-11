@@ -25,6 +25,7 @@ export interface Invoice {
   dueDate?: string
   status: InvoiceStatus
   subtotal: number
+  discount: number // Nuevo campo
   itbis: number
   total: number
   notes?: string
@@ -66,6 +67,7 @@ export async function getInvoices(): Promise<Invoice[]> {
     dueDate: inv.due_date,
     status: inv.status as InvoiceStatus,
     subtotal: Number(inv.subtotal),
+    discount: Number(inv.discount || 0), // Mapear descuento
     itbis: Number(inv.itbis),
     total: Number(inv.total),
     notes: inv.notes,
@@ -117,6 +119,7 @@ export async function getInvoice(id: string): Promise<Invoice | null> {
     dueDate: invoiceData.due_date,
     status: invoiceData.status as InvoiceStatus,
     subtotal: Number(invoiceData.subtotal),
+    discount: Number(invoiceData.discount || 0), // Mapear descuento
     itbis: Number(invoiceData.itbis),
     total: Number(invoiceData.total),
     notes: invoiceData.notes,
@@ -142,6 +145,7 @@ export async function createInvoice(data: {
   status: InvoiceStatus
   notes?: string
   applyItbis: boolean
+  discount: number // Recibir descuento
   items: Array<{
     productId?: string
     description: string
@@ -159,8 +163,15 @@ export async function createInvoice(data: {
   }
 
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-  const itbis = data.applyItbis ? subtotal * 0.18 : 0
-  const total = subtotal + itbis
+  
+  // Cálculo: (Subtotal - Descuento) = Base Imponible
+  const discount = data.discount || 0
+  const taxableAmount = Math.max(0, subtotal - discount)
+  
+  // ITBIS se calcula sobre la base imponible (después del descuento)
+  const itbis = data.applyItbis ? taxableAmount * 0.18 : 0
+  
+  const total = taxableAmount + itbis
 
   const { data: lastInvoice } = await supabase
     .from("invoices")
@@ -189,6 +200,7 @@ export async function createInvoice(data: {
       due_date: data.dueDate || null,
       status: data.status,
       subtotal,
+      discount, // Guardar descuento
       itbis,
       total,
       notes: data.notes || null,
@@ -231,6 +243,7 @@ export async function updateInvoice(
     status: InvoiceStatus
     notes?: string
     applyItbis: boolean
+    discount: number // Recibir descuento
     items: Array<{
       productId?: string
       description: string
@@ -249,8 +262,12 @@ export async function updateInvoice(
   }
 
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-  const itbis = data.applyItbis ? subtotal * 0.18 : 0
-  const total = subtotal + itbis
+  
+  // Cálculo actualizado
+  const discount = data.discount || 0
+  const taxableAmount = Math.max(0, subtotal - discount)
+  const itbis = data.applyItbis ? taxableAmount * 0.18 : 0
+  const total = taxableAmount + itbis
 
   const { error: updateError } = await supabase
     .from("invoices")
@@ -261,6 +278,7 @@ export async function updateInvoice(
       due_date: data.dueDate || null,
       status: data.status,
       subtotal,
+      discount, // Actualizar descuento
       itbis,
       total,
       notes: data.notes || null,
