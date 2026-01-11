@@ -1,7 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache" // IMPORTANTE
+import { revalidatePath } from "next/cache"
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled"
 
@@ -33,15 +33,9 @@ export interface Invoice {
   updatedAt: Date
 }
 
-// Counter for invoice numbers - in production, this should be in the database
-let invoiceCounter = 1
-
 export async function getInvoices(): Promise<Invoice[]> {
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error("Unauthorized")
 
@@ -52,11 +46,9 @@ export async function getInvoices(): Promise<Invoice[]> {
     .order("created_at", { ascending: false })
 
   if (invoicesError) throw invoicesError
-
   if (!invoicesData || invoicesData.length === 0) return []
 
   const invoiceIds = invoicesData.map((inv) => inv.id)
-
   const { data: itemsData, error: itemsError } = await supabase
     .from("invoice_items")
     .select("*")
@@ -95,10 +87,7 @@ export async function getInvoices(): Promise<Invoice[]> {
 
 export async function getInvoice(id: string): Promise<Invoice | null> {
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error("Unauthorized")
 
@@ -152,7 +141,7 @@ export async function createInvoice(data: {
   dueDate?: string
   status: InvoiceStatus
   notes?: string
-  applyItbis: boolean // Nuevo campo
+  applyItbis: boolean
   items: Array<{
     productId?: string
     description: string
@@ -161,10 +150,7 @@ export async function createInvoice(data: {
   }>
 }) {
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error("Unauthorized")
 
@@ -173,10 +159,7 @@ export async function createInvoice(data: {
   }
 
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-  
-  // Lógica corregida para usar el parámetro applyItbis
   const itbis = data.applyItbis ? subtotal * 0.18 : 0
-  
   const total = subtotal + itbis
 
   const { data: lastInvoice } = await supabase
@@ -213,9 +196,7 @@ export async function createInvoice(data: {
     .select()
     .single()
 
-  if (invoiceError) {
-    return { error: invoiceError.message }
-  }
+  if (invoiceError) return { error: invoiceError.message }
 
   const itemsToInsert = data.items.map((item) => ({
     invoice_id: invoiceData.id,
@@ -233,7 +214,124 @@ export async function createInvoice(data: {
     return { error: itemsError.message }
   }
 
-  // Actualizar caché
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
-  re
+  revalidatePath("/dashboard/reports")
+
+  return { success: true, id: invoiceData.id }
+}
+
+export async function updateInvoice(
+  id: string,
+  data: {
+    customerId?: string
+    customerName: string
+    issueDate: string
+    dueDate?: string
+    status: InvoiceStatus
+    notes?: string
+    applyItbis: boolean
+    items: Array<{
+      productId?: string
+      description: string
+      quantity: number
+      unitPrice: number
+    }>
+  },
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Unauthorized")
+
+  if (!data.customerName || data.items.length === 0) {
+    return { error: "Cliente y al menos un item son requeridos" }
+  }
+
+  const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  const itbis = data.applyItbis ? subtotal * 0.18 : 0
+  const total = subtotal + itbis
+
+  const { error: updateError } = await supabase
+    .from("invoices")
+    .update({
+      customer_id: data.customerId || null,
+      customer_name: data.customerName,
+      issue_date: data.issueDate,
+      due_date: data.dueDate || null,
+      status: data.status,
+      subtotal,
+      itbis,
+      total,
+      notes: data.notes || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (updateError) return { error: updateError.message }
+
+  await supabase.from("invoice_items").delete().eq("invoice_id", id)
+
+  const itemsToInsert = data.items.map((item) => ({
+    invoice_id: id,
+    product_id: item.productId || null,
+    description: item.description,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+    total: item.quantity * item.unitPrice,
+  }))
+
+  const { error: itemsError } = await supabase.from("invoice_items").insert(itemsToInsert)
+
+  if (itemsError) return { error: itemsError.message }
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath(`/dashboard/invoices/${id}`)
+  revalidatePath("/dashboard/reports")
+
+  return { success: true }
+}
+
+export async function deleteInvoice(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Unauthorized")
+
+  const { error } = await supabase.from("invoices").delete().eq("id", id).eq("user_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath("/dashboard/reports")
+
+  return { success: true }
+}
+
+export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error("Unauthorized")
+
+  const { error } = await supabase
+    .from("invoices")
+    .update({
+      status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+
+  if (error) return { error: error.message }
+
+  revalidatePath("/dashboard")
+  revalidatePath("/dashboard/invoices")
+  revalidatePath(`/dashboard/invoices/${id}`)
+  revalidatePath("/dashboard/reports")
+
+  return { success: true }
+}
