@@ -72,6 +72,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     const product = products.find((p) => p.id === productId)
     if (product) {
       updateItem(index, "productId", productId)
+      // AQUÍ SE ASIGNA AUTOMÁTICAMENTE LA DESCRIPCIÓN
       updateItem(index, "description", product.description || product.name)
       updateItem(index, "unitPrice", product.price)
     }
@@ -85,15 +86,10 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     }
   }
 
-  // Cálculos de totales
+  // Cálculos de totales en tiempo real
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
-  
-  // Base imponible = Subtotal - Descuento (no puede ser menor a 0)
   const taxableAmount = Math.max(0, subtotal - discount)
-  
-  // ITBIS sobre el monto con descuento aplicado
   const itbis = applyItbis ? taxableAmount * 0.18 : 0
-  
   const total = taxableAmount + itbis
 
   function formatCurrency(amount: number) {
@@ -117,7 +113,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
         status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
         notes: notes || undefined,
         applyItbis: applyItbis,
-        discount: discount, // Enviar descuento
+        discount: discount,
         items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
       }
 
@@ -321,7 +317,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
               
-              {/* Apartado de Descuento */}
+              {/* CAMPO DE DESCUENTO */}
               <div className="flex justify-between text-sm items-center">
                 <span className="text-slate-600">Descuento:</span>
                 <div className="w-32">
