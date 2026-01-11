@@ -154,6 +154,15 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                   <span>Subtotal:</span>
                   <span>{formatCurrency(invoice.subtotal)}</span>
                 </div>
+                
+                {/* MOSTRAR DESCUENTO SI EXISTE */}
+                {invoice.discount > 0 && (
+                  <div className="flex justify-between text-sm text-red-600 font-medium">
+                    <span>Descuento:</span>
+                    <span>-{formatCurrency(invoice.discount)}</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-sm text-slate-700">
                   <span>ITBIS (18%):</span>
                   <span>{formatCurrency(invoice.itbis)}</span>
