@@ -109,11 +109,8 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
         dueDate: dueDate || undefined,
         status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
         notes: notes || undefined,
+        applyItbis: applyItbis, // Enviamos el estado del checkbox al servidor
         items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
-        // Importante: Aseguramos que el backend reciba los cálculos correctos si los espera, 
-        // aunque generalmente el backend recalcula. Si tu backend calcula el ITBIS automático, 
-        // asegúrate de pasar un flag o ajustar la lógica en el servidor. 
-        // Aquí asumimos que enviamos los items y el backend procesará o que enviamos datos básicos.
       }
 
       const result = invoice ? await updateInvoice(invoice.id, data) : await createInvoice(data)
