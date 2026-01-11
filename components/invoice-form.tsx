@@ -72,8 +72,8 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     const product = products.find((p) => p.id === productId)
     if (product) {
       updateItem(index, "productId", productId)
-      // AQUÍ SE ASIGNA AUTOMÁTICAMENTE LA DESCRIPCIÓN
-      updateItem(index, "description", product.description || product.name)
+      // CORRECCIÓN: Asignar directamente el nombre del producto a la descripción
+      updateItem(index, "description", product.name)
       updateItem(index, "unitPrice", product.price)
     }
   }
