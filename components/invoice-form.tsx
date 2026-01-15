@@ -75,10 +75,15 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
   function selectProduct(index: number, productId: string) {
     const product = products.find((p) => p.id === productId)
     if (product) {
-      updateItem(index, "productId", productId)
-      // CORRECCIÓN: Asignar directamente el nombre del producto a la descripción
-      updateItem(index, "description", product.name)
-      updateItem(index, "unitPrice", product.price)
+      const updated = [...items]
+      updated[index] = {
+        ...updated[index],
+        productId: productId,
+        description: product.name,
+        unitPrice: product.price,
+        // Mantener la cantidad actual o poner 1 si es nueva
+      }
+      setItems(updated)
     }
   }
 
@@ -288,19 +293,22 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
             {items.map((item, index) => (
               <div key={index} className="grid grid-cols-12 gap-3 items-start p-4 border rounded-lg">
                 <div className="col-span-12 md:col-span-4">
-                  <Label className="text-xs">Producto</Label>
+                  <Label className="text-xs font-semibold">Producto *</Label>
                   <Select
                     value={item.productId || ""}
                     onValueChange={(value) => selectProduct(index, value)}
                     disabled={loading}
                   >
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder="Seleccionar producto" />
+                    <SelectTrigger className="mt-1 border-2">
+                      <SelectValue placeholder="Seleccionar producto..." />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((product) => (
                         <SelectItem key={product.id} value={product.id}>
-                          {product.name}
+                          <div className="flex gap-2">
+                            <span>{product.name}</span>
+                            <span className="text-slate-500">({formatCurrency(product.price)})</span>
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -308,17 +316,19 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                 </div>
 
                 <div className="col-span-12 md:col-span-4">
-                  <Label className="text-xs">Descripción *</Label>
+                  <Label className="text-xs font-semibold">Descripción *</Label>
                   <Input
                     className="mt-1"
                     value={item.description}
                     onChange={(e) => updateItem(index, "description", e.target.value)}
-                    placeholder="Descripción"
+                    placeholder="Descripción manual"
                     required
                     disabled={loading || !!item.productId}
                   />
-                  {item.productId && (
-                    <p className="text-xs text-slate-500 mt-1">La descripción se toma del producto</p>
+                  {item.productId ? (
+                    <p className="text-xs text-green-600 mt-1">✓ Nombre del producto: {item.description}</p>
+                  ) : (
+                    <p className="text-xs text-slate-500 mt-1">Escribe una descripción o selecciona un producto</p>
                   )}
                 </div>
 
@@ -337,11 +347,12 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                 </div>
 
                 <div className="col-span-6 md:col-span-2">
-                  <Label className="text-xs">Precio</Label>
+                  <Label className="text-xs font-semibold">Precio Unitario</Label>
                   <div className="mt-1">
                     {item.productId ? (
-                      <div className="p-2 bg-slate-100 rounded border border-slate-200 text-sm font-semibold text-slate-700">
-                        {formatCurrency(item.unitPrice)}
+                      <div className="p-2 bg-green-50 rounded border border-green-300 text-sm font-semibold text-green-700 flex justify-between items-center">
+                        <span>{formatCurrency(item.unitPrice)}</span>
+                        <span className="text-xs font-normal text-green-600">(del producto)</span>
                       </div>
                     ) : (
                       <Input
@@ -350,14 +361,12 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                         step="0.01"
                         value={item.unitPrice}
                         onChange={(e) => updateItem(index, "unitPrice", Number.parseFloat(e.target.value))}
+                        placeholder="0.00"
                         required
                         disabled={loading}
                       />
                     )}
                   </div>
-                  {item.productId && (
-                    <p className="text-xs text-slate-500 mt-1">Modificar con descuento</p>
-                  )}
                 </div>
 
                 <div className="col-span-1 flex items-end justify-end">
