@@ -48,7 +48,16 @@ export async function createPayment(data: {
 }) {
   const supabase = await createClient()
 
-  // 1. Insertar el pago
+  // 1. Obtener información de la factura
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("total, customer_id")
+    .eq("id", data.invoiceId)
+    .single()
+
+  if (!invoice) return { error: "Factura no encontrada" }
+
+  // 2. Insertar el pago
   const { error } = await supabase.from("payments").insert({
     invoice_id: data.invoiceId,
     amount: data.amount,
@@ -60,13 +69,24 @@ export async function createPayment(data: {
 
   if (error) return { error: error.message }
 
-  // 2. Verificar totales para ver si la factura está pagada
-  const { data: invoice } = await supabase
-    .from("invoices")
-    .select("total")
-    .eq("id", data.invoiceId)
-    .single()
+  // 3. Si el cliente tiene financiamiento, reducir su deuda
+  if (invoice.customer_id) {
+    const { data: customer } = await supabase
+      .from("customers")
+      .select("financing_available, financing_used")
+      .eq("id", invoice.customer_id)
+      .single()
 
+    if (customer && customer.financing_available && customer.financing_used > 0) {
+      const newFinancingUsed = Math.max(0, customer.financing_used - data.amount)
+      await supabase
+        .from("customers")
+        .update({ financing_used: newFinancingUsed })
+        .eq("id", invoice.customer_id)
+    }
+  }
+
+  // 4. Verificar totales para ver si la factura está pagada
   const { data: payments } = await supabase
     .from("payments")
     .select("amount")

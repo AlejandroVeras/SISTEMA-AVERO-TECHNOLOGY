@@ -201,6 +201,7 @@ export async function createInvoice(data: {
   status: InvoiceStatus
   notes?: string
   applyItbis: boolean
+  applyFinancing: boolean
   discount: number
   items: Array<{
     productId?: string
@@ -287,8 +288,8 @@ export async function createInvoice(data: {
   }
 
   // --- LÓGICA DE FINANCIAMIENTO: ACTUALIZAR DEUDA DEL CLIENTE ---
-  if (data.customerId && data.status !== "draft") {
-    // Solo actualizar financiamiento si no es un borrador
+  if (data.customerId && data.status !== "draft" && data.applyFinancing) {
+    // Solo actualizar financiamiento si está habilitado y no es un borrador
     await updateCustomerFinancing(supabase, data.customerId, total)
   }
 
@@ -311,6 +312,7 @@ export async function updateInvoice(
     status: InvoiceStatus
     notes?: string
     applyItbis: boolean
+    applyFinancing: boolean
     discount: number
     items: Array<{
       productId?: string
@@ -362,6 +364,8 @@ export async function updateInvoice(
 
   // --- LÓGICA DE FINANCIAMIENTO: REVERTIR DEUDA ANTERIOR ---
   if (oldInvoiceData?.customer_id && oldInvoiceData.status !== "draft") {
+    // Solo si la factura anterior tenía financiamiento activo (necesitarías agregar un campo en la tabla)
+    // Por ahora, revertimos si el cliente tiene financiamiento habilitado
     await updateCustomerFinancing(supabase, oldInvoiceData.customer_id, -oldInvoiceData.total)
   }
 
@@ -409,7 +413,7 @@ export async function updateInvoice(
   }
 
   // --- LÓGICA DE FINANCIAMIENTO: ACTUALIZAR NUEVA DEUDA ---
-  if (data.customerId && data.status !== "draft") {
+  if (data.customerId && data.status !== "draft" && data.applyFinancing) {
     await updateCustomerFinancing(supabase, data.customerId, total)
   }
 

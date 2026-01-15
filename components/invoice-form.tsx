@@ -41,9 +41,10 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
   const [status, setStatus] = useState(invoice?.status || "draft")
   const [notes, setNotes] = useState(invoice?.notes || "")
   
-  // Estado para descuento y control de ITBIS
+  // Estado para descuento y control de ITBIS y FINANCIAMIENTO
   const [discount, setDiscount] = useState<number>(invoice?.discount || 0)
   const [applyItbis, setApplyItbis] = useState(invoice ? invoice.itbis > 0 : true)
+  const [applyFinancing, setApplyFinancing] = useState(false)
 
   const [items, setItems] = useState<InvoiceItemForm[]>(
     invoice?.items.map((item) => ({
@@ -116,6 +117,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
         status: status as "draft" | "sent" | "paid" | "overdue" | "cancelled",
         notes: notes || undefined,
         applyItbis: applyItbis,
+        applyFinancing: applyFinancing && customerId ? true : false,
         discount: discount,
         items: items.filter((item) => item.description && item.quantity > 0 && item.unitPrice > 0),
       }
@@ -215,6 +217,27 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedCustomer && selectedCustomer.financingAvailable && (
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="applyFinancing"
+                      checked={applyFinancing}
+                      onCheckedChange={(checked) => setApplyFinancing(checked as boolean)}
+                      disabled={loading}
+                    />
+                    <Label htmlFor="applyFinancing" className="text-sm font-medium cursor-pointer">
+                      Aplicar a Financiamiento del Cliente
+                    </Label>
+                  </div>
+                  {applyFinancing && (
+                    <p className="text-xs text-blue-600 ml-6">
+                      El total de esta factura se sumará a la deuda de financiamiento del cliente
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {selectedCustomer && selectedCustomer.financingAvailable && (
