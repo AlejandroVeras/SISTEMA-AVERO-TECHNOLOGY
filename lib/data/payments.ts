@@ -51,7 +51,7 @@ export async function createPayment(data: {
   // 1. Obtener información de la factura
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("total, customer_id")
+    .select("total, customer_id, apply_financing")
     .eq("id", data.invoiceId)
     .single()
 
@@ -69,7 +69,7 @@ export async function createPayment(data: {
 
   if (error) return { error: error.message }
 
-  // 3. Si el cliente tiene financiamiento, reducir su deuda
+  // 3. Si el cliente tiene financiamiento, reducir su deuda y registrar en financing_payments
   if (invoice.customer_id) {
     const { data: customer } = await supabase
       .from("customers")
@@ -83,6 +83,18 @@ export async function createPayment(data: {
         .from("customers")
         .update({ financing_used: newFinancingUsed })
         .eq("id", invoice.customer_id)
+
+      // Si la factura fue creada con financiamiento, registrar también en financing_payments
+      if (invoice.apply_financing) {
+        await supabase.from("financing_payments").insert({
+          customer_id: invoice.customer_id,
+          amount: data.amount,
+          date: data.date,
+          payment_method: data.method,
+          reference: data.reference,
+          notes: `Pago de factura #${data.invoiceId.slice(0, 8)}${data.notes ? ` - ${data.notes}` : ""}`
+        })
+      }
     }
   }
 

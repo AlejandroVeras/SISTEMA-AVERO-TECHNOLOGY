@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   discount DECIMAL(10, 2) DEFAULT 0,
   itbis DECIMAL(10, 2) NOT NULL DEFAULT 0,
   total DECIMAL(10, 2) NOT NULL,
+  apply_financing BOOLEAN DEFAULT false,
   notes TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

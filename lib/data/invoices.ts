@@ -256,6 +256,7 @@ export async function createInvoice(data: {
       discount,
       itbis,
       total,
+      apply_financing: data.applyFinancing,
       notes: data.notes || null,
     })
     .select()
@@ -381,6 +382,7 @@ export async function updateInvoice(
       discount,
       itbis,
       total,
+      apply_financing: data.applyFinancing,
       notes: data.notes || null,
       updated_at: new Date().toISOString(),
     })
