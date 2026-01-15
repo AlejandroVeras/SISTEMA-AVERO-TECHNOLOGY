@@ -15,6 +15,7 @@ import { signOut } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import type { User } from "@/lib/auth"
 import Link from "next/link"
+import Image from "next/image"
 
 interface DashboardHeaderProps {
   user: User
@@ -42,12 +43,19 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
       <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <Image 
+                src="/logo.png" 
+                alt="AVERO Technology" 
+                width={40} 
+                height={40}
+                className="rounded-lg"
+              />
+              <div className="flex flex-col">
+                <span className="font-bold text-lg text-slate-900">AVERO</span>
+                <span className="text-xs text-slate-600">Technology</span>
               </div>
-              <span className="font-bold text-xl text-slate-900">Avero</span>
-            </div>
+            </Link>
 
             <nav className="hidden md:flex items-center gap-1 ml-8">
               {navigation.map((item) => (
