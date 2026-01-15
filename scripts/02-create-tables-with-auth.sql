@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS customers (
   rnc TEXT,
   address TEXT,
   notes TEXT,
+  financing_available BOOLEAN DEFAULT false,
+  financing_limit DECIMAL(10, 2) DEFAULT 0,
+  financing_used DECIMAL(10, 2) DEFAULT 0,
+  financing_interest_rate DECIMAL(5, 2) DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -38,6 +42,7 @@ CREATE TABLE IF NOT EXISTS invoices (
   due_date DATE,
   status TEXT NOT NULL CHECK (status IN ('draft', 'sent', 'paid', 'overdue', 'cancelled')),
   subtotal DECIMAL(10, 2) NOT NULL,
+  discount DECIMAL(10, 2) DEFAULT 0,
   itbis DECIMAL(10, 2) NOT NULL DEFAULT 0,
   total DECIMAL(10, 2) NOT NULL,
   notes TEXT,

@@ -12,6 +12,10 @@ export interface Customer {
   rnc?: string
   address?: string
   notes?: string
+  financingAvailable: boolean
+  financingLimit: number
+  financingUsed: number
+  financingInterestRate: number
   createdAt: Date
   updatedAt: Date
 }
@@ -42,6 +46,10 @@ export async function getCustomers(): Promise<Customer[]> {
     rnc: c.rnc,
     address: c.address,
     notes: c.notes,
+    financingAvailable: c.financing_available || false,
+    financingLimit: Number(c.financing_limit) || 0,
+    financingUsed: Number(c.financing_used) || 0,
+    financingInterestRate: Number(c.financing_interest_rate) || 0,
     createdAt: new Date(c.created_at),
     updatedAt: new Date(c.updated_at),
   }))
@@ -69,6 +77,10 @@ export async function getCustomer(id: string): Promise<Customer | null> {
     rnc: data.rnc,
     address: data.address,
     notes: data.notes,
+    financingAvailable: data.financing_available || false,
+    financingLimit: Number(data.financing_limit) || 0,
+    financingUsed: Number(data.financing_used) || 0,
+    financingInterestRate: Number(data.financing_interest_rate) || 0,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
   }
@@ -89,6 +101,9 @@ export async function createCustomer(formData: FormData) {
   const rnc = formData.get("rnc") as string
   const address = formData.get("address") as string
   const notes = formData.get("notes") as string
+  const financingAvailable = formData.get("financingAvailable") === "on"
+  const financingLimit = Number.parseFloat(formData.get("financingLimit") as string) || 0
+  const financingInterestRate = Number.parseFloat(formData.get("financingInterestRate") as string) || 0
 
   if (!name) {
     return { error: "El nombre es requerido" }
@@ -104,6 +119,10 @@ export async function createCustomer(formData: FormData) {
       rnc: rnc || null,
       address: address || null,
       notes: notes || null,
+      financing_available: financingAvailable,
+      financing_limit: financingLimit,
+      financing_used: 0,
+      financing_interest_rate: financingInterestRate,
     })
     .select()
     .single()
@@ -143,6 +162,9 @@ export async function updateCustomer(id: string, formData: FormData) {
       rnc: (formData.get("rnc") as string) || null,
       address: (formData.get("address") as string) || null,
       notes: (formData.get("notes") as string) || null,
+      financing_available: (formData.get("financingAvailable") as string) === "on",
+      financing_limit: Number.parseFloat((formData.get("financingLimit") as string) || "0"),
+      financing_interest_rate: Number.parseFloat((formData.get("financingInterestRate") as string) || "0"),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)

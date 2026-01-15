@@ -58,6 +58,38 @@ async function updateProductStock(supabase: any, productId: string, quantityChan
   }
 }
 
+// Función auxiliar para actualizar financiamiento del cliente
+async function updateCustomerFinancing(supabase: any, customerId: string, amountChange: number) {
+  // amountChange positivo para aumentar deuda, negativo para disminuir
+  
+  // 1. Obtener cliente actual
+  const { data: customer, error } = await supabase
+    .from("customers")
+    .select("financing_available, financing_limit, financing_used")
+    .eq("id", customerId)
+    .single()
+
+  if (error || !customer) return false // Si no existe, ignorar
+  
+  // 2. Si tiene financiamiento disponible, actualizar
+  if (customer.financing_available) {
+    const newFinancingUsed = (customer.financing_used || 0) + amountChange
+    const totalAvailable = customer.financing_limit || 0
+    
+    // Validar que no exceda el límite
+    if (newFinancingUsed <= totalAvailable && newFinancingUsed >= 0) {
+      const { error: updateError } = await supabase
+        .from("customers")
+        .update({ financing_used: newFinancingUsed })
+        .eq("id", customerId)
+      
+      return !updateError
+    }
+  }
+  
+  return true // Devolver true si el cliente no tiene financiamiento o la operación fue exitosa
+}
+
 export async function getInvoices(): Promise<Invoice[]> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -254,10 +286,17 @@ export async function createInvoice(data: {
     }
   }
 
+  // --- LÓGICA DE FINANCIAMIENTO: ACTUALIZAR DEUDA DEL CLIENTE ---
+  if (data.customerId && data.status !== "draft") {
+    // Solo actualizar financiamiento si no es un borrador
+    await updateCustomerFinancing(supabase, data.customerId, total)
+  }
+
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
   revalidatePath("/dashboard/reports")
   revalidatePath("/dashboard/products") // Actualizar vista de productos
+  revalidatePath("/dashboard/customers") // Actualizar vista de clientes
 
   return { success: true, id: invoiceData.id }
 }
@@ -290,6 +329,14 @@ export async function updateInvoice(
     return { error: "Cliente y al menos un item son requeridos" }
   }
 
+  // Obtener factura anterior para comparar cambios de financiamiento
+  const { data: oldInvoiceData } = await supabase
+    .from("invoices")
+    .select("customer_id, total, status")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+
   const subtotal = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   
   const discount = data.discount || 0
@@ -311,6 +358,11 @@ export async function updateInvoice(
         await updateProductStock(supabase, item.product_id, Number(item.quantity))
       }
     }
+  }
+
+  // --- LÓGICA DE FINANCIAMIENTO: REVERTIR DEUDA ANTERIOR ---
+  if (oldInvoiceData?.customer_id && oldInvoiceData.status !== "draft") {
+    await updateCustomerFinancing(supabase, oldInvoiceData.customer_id, -oldInvoiceData.total)
   }
 
   const { error: updateError } = await supabase
@@ -356,11 +408,17 @@ export async function updateInvoice(
     }
   }
 
+  // --- LÓGICA DE FINANCIAMIENTO: ACTUALIZAR NUEVA DEUDA ---
+  if (data.customerId && data.status !== "draft") {
+    await updateCustomerFinancing(supabase, data.customerId, total)
+  }
+
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
   revalidatePath(`/dashboard/invoices/${id}`)
   revalidatePath("/dashboard/reports")
   revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/customers")
 
   return { success: true }
 }
@@ -370,6 +428,14 @@ export async function deleteInvoice(id: string) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) throw new Error("Unauthorized")
+
+  // Obtener datos de la factura antes de borrarla
+  const { data: invoiceData } = await supabase
+    .from("invoices")
+    .select("customer_id, total, status")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
 
   // --- LÓGICA DE INVENTARIO: DEVOLVER STOCK ANTES DE BORRAR ---
   const { data: oldItems } = await supabase
@@ -385,6 +451,11 @@ export async function deleteInvoice(id: string) {
     }
   }
 
+  // --- LÓGICA DE FINANCIAMIENTO: REVERTIR DEUDA ANTES DE BORRAR ---
+  if (invoiceData?.customer_id && invoiceData.status !== "draft") {
+    await updateCustomerFinancing(supabase, invoiceData.customer_id, -invoiceData.total)
+  }
+
   const { error } = await supabase.from("invoices").delete().eq("id", id).eq("user_id", user.id)
 
   if (error) return { error: error.message }
@@ -393,6 +464,7 @@ export async function deleteInvoice(id: string) {
   revalidatePath("/dashboard/invoices")
   revalidatePath("/dashboard/reports")
   revalidatePath("/dashboard/products")
+  revalidatePath("/dashboard/customers")
 
   return { success: true }
 }

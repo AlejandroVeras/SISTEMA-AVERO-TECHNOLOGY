@@ -2,7 +2,8 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Mail, Phone, MapPin, Edit, Trash2 } from "lucide-react"
+import { Mail, Phone, MapPin, Edit, Trash2, TrendingUp } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import type { Customer } from "@/lib/data/customers"
 import { useRouter } from "next/navigation"
 import { deleteCustomer } from "@/lib/data/customers"
@@ -53,51 +54,89 @@ export function CustomersList({ customers }: CustomersListProps) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {customers.map((customer) => (
-          <Card key={customer.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-lg text-slate-900">{customer.name}</h3>
-                  {customer.rnc && <p className="text-sm text-slate-600">RNC: {customer.rnc}</p>}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => setDeleteId(customer.id)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
+        {customers.map((customer) => {
+          const financingPercentage = customer.financingLimit > 0 
+            ? (customer.financingUsed / customer.financingLimit) * 100 
+            : 0
 
-              <div className="space-y-2">
-                {customer.email && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Mail className="h-4 w-4" />
-                    <span>{customer.email}</span>
+          return (
+            <Card key={customer.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg text-slate-900">{customer.name}</h3>
+                    <div className="flex gap-2 mt-1">
+                      {customer.rnc && <p className="text-xs text-slate-600">RNC: {customer.rnc}</p>}
+                      {customer.financingAvailable && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          Financiamiento
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => setDeleteId(customer.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {customer.email && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Mail className="h-4 w-4" />
+                      <span>{customer.email}</span>
+                    </div>
+                  )}
+                  {customer.phone && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <Phone className="h-4 w-4" />
+                      <span>{customer.phone}</span>
+                    </div>
+                  )}
+                  {customer.address && (
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <MapPin className="h-4 w-4" />
+                      <span className="line-clamp-2">{customer.address}</span>
+                    </div>
+                  )}
+                </div>
+
+                {customer.financingAvailable && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+                    <p className="text-xs font-semibold text-slate-700 mb-2">Financiamiento</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-600">Usado</span>
+                        <span className="font-semibold">{customer.financingUsed.toFixed(0)} DOP</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-slate-600">Límite</span>
+                        <span className="font-semibold">{customer.financingLimit.toFixed(0)} DOP</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">
+                        <div
+                          className={`h-1.5 rounded-full transition-all ${
+                            financingPercentage >= 100 ? "bg-red-500" : financingPercentage >= 75 ? "bg-yellow-500" : "bg-green-500"
+                          }`}
+                          style={{ width: `${Math.min(financingPercentage, 100)}%` }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 )}
-                {customer.phone && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Phone className="h-4 w-4" />
-                    <span>{customer.phone}</span>
-                  </div>
-                )}
-                {customer.address && (
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <MapPin className="h-4 w-4" />
-                    <span className="line-clamp-2">{customer.address}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
