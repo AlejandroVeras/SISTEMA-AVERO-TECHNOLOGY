@@ -289,6 +289,59 @@ CREATE POLICY "Users can delete their own expenses"
   ON expenses FOR DELETE
   USING (auth.uid() = user_id);
 
+-- Create financing_payments table for customer financing payments
+CREATE TABLE IF NOT EXISTS financing_payments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id UUID REFERENCES customers(id) ON DELETE CASCADE NOT NULL,
+  amount DECIMAL(10, 2) NOT NULL,
+  date DATE NOT NULL,
+  payment_method TEXT NOT NULL,
+  reference TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for financing_payments
+CREATE INDEX IF NOT EXISTS idx_financing_payments_customer_id ON financing_payments(customer_id);
+CREATE INDEX IF NOT EXISTS idx_financing_payments_date ON financing_payments(date);
+
+-- Enable RLS for financing_payments
+ALTER TABLE financing_payments ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for financing_payments
+CREATE POLICY "Users can view financing payments for their customers"
+  ON financing_payments FOR SELECT
+  USING (EXISTS (
+    SELECT 1 FROM customers 
+    WHERE customers.id = financing_payments.customer_id 
+    AND customers.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can insert financing payments for their customers"
+  ON financing_payments FOR INSERT
+  WITH CHECK (EXISTS (
+    SELECT 1 FROM customers 
+    WHERE customers.id = financing_payments.customer_id 
+    AND customers.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can update financing payments for their customers"
+  ON financing_payments FOR UPDATE
+  USING (EXISTS (
+    SELECT 1 FROM customers 
+    WHERE customers.id = financing_payments.customer_id 
+    AND customers.user_id = auth.uid()
+  ));
+
+CREATE POLICY "Users can delete financing payments for their customers"
+  ON financing_payments FOR DELETE
+  USING (EXISTS (
+    SELECT 1 FROM customers 
+    WHERE customers.id = financing_payments.customer_id 
+    AND customers.user_id = auth.uid()
+  ));
+
 -- RLS Policies for profiles
 CREATE POLICY "Users can view their own profile"
   ON profiles FOR SELECT
