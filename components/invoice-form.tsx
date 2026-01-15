@@ -292,8 +292,11 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                     onChange={(e) => updateItem(index, "description", e.target.value)}
                     placeholder="Descripción"
                     required
-                    disabled={loading}
+                    disabled={loading || !!item.productId}
                   />
+                  {item.productId && (
+                    <p className="text-xs text-slate-500 mt-1">La descripción se toma del producto</p>
+                  )}
                 </div>
 
                 <div className="col-span-4 md:col-span-1">
@@ -312,16 +315,26 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
 
                 <div className="col-span-6 md:col-span-2">
                   <Label className="text-xs">Precio</Label>
-                  <Input
-                    className="mt-1"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.unitPrice}
-                    onChange={(e) => updateItem(index, "unitPrice", Number.parseFloat(e.target.value))}
-                    required
-                    disabled={loading}
-                  />
+                  <div className="mt-1">
+                    {item.productId ? (
+                      <div className="p-2 bg-slate-100 rounded border border-slate-200 text-sm font-semibold text-slate-700">
+                        {formatCurrency(item.unitPrice)}
+                      </div>
+                    ) : (
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.unitPrice}
+                        onChange={(e) => updateItem(index, "unitPrice", Number.parseFloat(e.target.value))}
+                        required
+                        disabled={loading}
+                      />
+                    )}
+                  </div>
+                  {item.productId && (
+                    <p className="text-xs text-slate-500 mt-1">Modificar con descuento</p>
+                  )}
                 </div>
 
                 <div className="col-span-1 flex items-end justify-end">
@@ -356,18 +369,25 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
               
               {/* CAMPO DE DESCUENTO */}
               <div className="flex justify-between text-sm items-center">
-                <span className="text-slate-600">Descuento:</span>
+                <Label htmlFor="discount" className="text-slate-600">Descuento (DOP):</Label>
                 <div className="w-32">
                    <Input
+                    id="discount"
                     type="number"
                     min="0"
                     step="0.01"
                     value={discount}
                     onChange={(e) => setDiscount(Number.parseFloat(e.target.value) || 0)}
                     className="h-8 text-right"
+                    placeholder="0.00"
                     disabled={loading}
                   />
                 </div>
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Importe Gravable:</span>
+                <span className="font-medium">{formatCurrency(taxableAmount)}</span>
               </div>
 
               <div className="flex justify-between text-sm">
@@ -375,8 +395,8 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                 <span className="font-medium">{formatCurrency(itbis)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">
-                <span>Total:</span>
-                <span>{formatCurrency(total)}</span>
+                <span>Total a Pagar:</span>
+                <span className="text-green-600">{formatCurrency(total)}</span>
               </div>
             </div>
           </CardContent>
