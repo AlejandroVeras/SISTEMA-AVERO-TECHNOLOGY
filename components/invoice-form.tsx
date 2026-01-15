@@ -54,6 +54,9 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
     })) || [{ description: "", quantity: 1, unitPrice: 0 }],
   )
 
+  // Obtener cliente seleccionado para mostrar financiamiento
+  const selectedCustomer = customers.find((c) => c.id === customerId)
+
   function addItem() {
     setItems([...items, { description: "", quantity: 1, unitPrice: 0 }])
   }
@@ -213,6 +216,40 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                 </Select>
               </div>
             </div>
+
+            {selectedCustomer && selectedCustomer.financingAvailable && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  💳 Financiamiento Disponible
+                </h3>
+                <div className="grid grid-cols-3 gap-3 text-sm mb-3">
+                  <div>
+                    <p className="text-blue-700 text-xs font-medium">LÍMITE</p>
+                    <p className="font-bold text-lg text-blue-900">{formatCurrency(selectedCustomer.financingLimit)}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-700 text-xs font-medium">USADO</p>
+                    <p className="font-bold text-lg text-orange-600">{formatCurrency(selectedCustomer.financingUsed)}</p>
+                  </div>
+                  <div>
+                    <p className="text-blue-700 text-xs font-medium">DISPONIBLE</p>
+                    <p className="font-bold text-lg text-green-600">
+                      {formatCurrency(Math.max(0, selectedCustomer.financingLimit - selectedCustomer.financingUsed))}
+                    </p>
+                  </div>
+                </div>
+                {selectedCustomer.financingInterestRate > 0 && (
+                  <p className="text-xs text-blue-700">
+                    Tasa de interés: <span className="font-semibold">{selectedCustomer.financingInterestRate}% mensual</span>
+                  </p>
+                )}
+                {selectedCustomer.financingLimit - selectedCustomer.financingUsed < total && total > 0 && (
+                  <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs text-yellow-800">
+                    ⚠️ El total de esta factura (${formatCurrency(total)}) excede el financiamiento disponible
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
