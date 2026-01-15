@@ -21,7 +21,8 @@ export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter()
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState(false)
-  const [trackInventory, setTrackInventory] = useState(product?.trackInventory || false)
+  // Por defecto, TODOS los productos tracken inventario (true)
+  const [trackInventory, setTrackInventory] = useState(product?.trackInventory !== false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -139,7 +140,7 @@ export function ProductForm({ product }: ProductFormProps) {
             </div>
 
             <div className="space-y-3 md:col-span-2 pt-2">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <Checkbox
                   id="trackInventory"
                   name="trackInventory"
@@ -147,15 +148,22 @@ export function ProductForm({ product }: ProductFormProps) {
                   onCheckedChange={(checked) => setTrackInventory(checked as boolean)}
                   disabled={loading}
                 />
-                <Label htmlFor="trackInventory" className="cursor-pointer">
-                  Controlar inventario
-                </Label>
+                <div className="flex-1">
+                  <Label htmlFor="trackInventory" className="cursor-pointer font-semibold">
+                    ✓ Controlar inventario automáticamente
+                  </Label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Desactiva esto solo si el stock es ilimitado o no lo necesitas controlar
+                  </p>
+                </div>
               </div>
             </div>
 
             {trackInventory && (
-              <div className="space-y-2">
-                <Label htmlFor="stockQuantity">Cantidad en Stock</Label>
+              <div className="space-y-2 md:col-span-2 p-3 bg-green-50 rounded-lg border border-green-200">
+                <Label htmlFor="stockQuantity" className="font-semibold">
+                  📦 Cantidad disponible en Stock
+                </Label>
                 <Input
                   id="stockQuantity"
                   name="stockQuantity"
@@ -164,7 +172,11 @@ export function ProductForm({ product }: ProductFormProps) {
                   placeholder="0"
                   disabled={loading}
                   defaultValue={product?.stockQuantity || 0}
+                  className="border-green-300"
                 />
+                <p className="text-xs text-gray-600">
+                  Esta cantidad se reducirá automáticamente cuando hagas una venta
+                </p>
               </div>
             )}
           </div>

@@ -94,7 +94,8 @@ export async function createProduct(formData: FormData) {
   const price = Number.parseFloat(formData.get("price") as string)
   const cost = formData.get("cost") as string
   const stockQuantity = Number.parseInt(formData.get("stockQuantity") as string) || 0
-  const trackInventory = formData.get("trackInventory") === "on"
+  // trackInventory por defecto es TRUE (habilitado)
+  const trackInventory = formData.get("trackInventory") !== "false"
   const category = formData.get("category") as string
 
   if (!name || isNaN(price)) {
@@ -142,6 +143,8 @@ export async function updateProduct(id: string, formData: FormData) {
 
   const cost = formData.get("cost") as string
   const stockQuantity = Number.parseInt(formData.get("stockQuantity") as string) || 0
+  // trackInventory por defecto es TRUE (habilitado)
+  const trackInventory = formData.get("trackInventory") !== "false"
 
   const { error } = await supabase
     .from("products")
@@ -152,7 +155,7 @@ export async function updateProduct(id: string, formData: FormData) {
       price,
       cost: cost ? Number.parseFloat(cost) : null,
       stock_quantity: stockQuantity,
-      track_inventory: formData.get("trackInventory") === "on",
+      track_inventory: trackInventory,
       category: (formData.get("category") as string) || null,
       updated_at: new Date().toISOString(),
     })

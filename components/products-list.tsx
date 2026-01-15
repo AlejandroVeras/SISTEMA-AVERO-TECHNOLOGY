@@ -102,8 +102,13 @@ export function ProductsList({ products }: ProductsListProps) {
                 <div className="flex items-center justify-between pt-2 border-t">
                   {product.category && <Badge variant="secondary">{product.category}</Badge>}
                   {product.trackInventory && (
-                    <Badge variant={product.stockQuantity > 0 ? "default" : "destructive"}>
-                      Stock: {product.stockQuantity}
+                    <Badge variant={product.stockQuantity > 0 ? "default" : "destructive"} className="text-sm">
+                      📦 {product.stockQuantity} unidad{product.stockQuantity !== 1 ? "es" : ""} en stock
+                    </Badge>
+                  )}
+                  {!product.trackInventory && (
+                    <Badge variant="outline" className="text-sm">
+                      Stock ilimitado
                     </Badge>
                   )}
                 </div>
