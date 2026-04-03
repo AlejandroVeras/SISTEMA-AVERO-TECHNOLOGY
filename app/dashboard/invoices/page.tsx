@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/auth"
 import { getInvoices } from "@/lib/data/invoices"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { InvoicesList } from "@/components/invoices-list"
 import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
@@ -18,7 +18,7 @@ export default async function InvoicesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader user={user} />
+
       <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -38,3 +38,4 @@ export default async function InvoicesPage() {
     </div>
   )
 }
+

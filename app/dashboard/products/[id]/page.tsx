@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation"
 import { getUser } from "@/lib/auth"
 import { getProduct } from "@/lib/data/products"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ProductForm } from "@/components/product-form"
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
@@ -20,7 +20,6 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader user={user} />
       <main className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Editar Producto</h1>

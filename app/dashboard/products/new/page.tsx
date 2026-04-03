@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/auth"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ProductForm } from "@/components/product-form"
 
 export default async function NewProductPage() {
@@ -12,7 +12,7 @@ export default async function NewProductPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader user={user} />
+
       <main className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Nuevo Producto</h1>
@@ -24,3 +24,4 @@ export default async function NewProductPage() {
     </div>
   )
 }
+

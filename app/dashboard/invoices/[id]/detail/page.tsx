@@ -2,7 +2,7 @@ import { redirect, notFound } from "next/navigation"
 import { getUser } from "@/lib/auth"
 import { getInvoice } from "@/lib/data/invoices"
 import { getPayments, createPayment } from "@/lib/data/payments"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { InvoicePDF } from "@/components/invoice-pdf"
 import { PaymentReceiptPDF } from "@/components/payment-receipt-pdf"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -68,7 +68,6 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader user={user} />
       <main className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         
         {/* Encabezado Principal */}

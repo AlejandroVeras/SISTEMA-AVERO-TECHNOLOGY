@@ -69,7 +69,7 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
               <div className="flex h-16 items-center gap-2 border-b px-6">
                 <Link href="/dashboard" className="flex items-center gap-2">
                   <Image
-                    src="/logo.png"
+                    src="/LOGO.png"
                     alt="AVERO Technology"
                     width={32}
                     height={32}

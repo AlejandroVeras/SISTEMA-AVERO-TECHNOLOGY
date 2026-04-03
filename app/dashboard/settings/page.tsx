@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getUser } from "@/lib/auth"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function SettingsPage() {
@@ -12,7 +12,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <DashboardHeader user={user} />
+
       <main className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
@@ -55,3 +55,4 @@ export default async function SettingsPage() {
     </div>
   )
 }
+
