@@ -10,12 +10,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { signOut } from "@/lib/auth"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import type { User } from "@/lib/auth"
 import Link from "next/link"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { ThemeToggle } from "./theme-toggle"
+import {
+  BarChart3,
+  CreditCard,
+  FileText,
+  LayoutDashboard,
+  Package,
+  Receipt,
+  Settings,
+  Users
+} from "lucide-react"
 
 interface DashboardHeaderProps {
   user: User
@@ -23,6 +35,7 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ user }: DashboardHeaderProps) {
   const router = useRouter()
+  const pathname = usePathname()
 
   async function handleSignOut() {
     await signOut()
@@ -30,88 +43,108 @@ export function DashboardHeader({ user }: DashboardHeaderProps) {
   }
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Clientes", href: "/dashboard/customers" },
-    { name: "Productos", href: "/dashboard/products" },
-    { name: "Facturas", href: "/dashboard/invoices" },
-    { name: "Gastos", href: "/dashboard/expenses" },
-    { name: "Reportes", href: "/dashboard/reports" },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Clientes", href: "/dashboard/customers", icon: Users },
+    { name: "Productos", href: "/dashboard/products", icon: Package },
+    { name: "Cotizaciones", href: "/dashboard/quotes", icon: FileText },
+    { name: "Facturas", href: "/dashboard/invoices", icon: Receipt },
+    { name: "Gastos", href: "/dashboard/expenses", icon: CreditCard },
+    { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
+    { name: "Configuración", href: "/dashboard/settings", icon: Settings },
   ]
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <Image 
-                src="/logo.png" 
-                alt="AVERO Technology" 
-                width={40} 
-                height={40}
-                className="rounded-lg"
-              />
-              <div className="flex flex-col">
-                <span className="font-bold text-lg text-slate-900">AVERO</span>
-                <span className="text-xs text-slate-600">Technology</span>
-              </div>
-            </Link>
-
-            <nav className="hidden md:flex items-center gap-1 ml-8">
-              {navigation.map((item) => (
-                <Link key={item.name} href={item.href}>
-                  <Button variant="ghost" size="sm">
-                    {item.name}
-                  </Button>
+    <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b sticky top-0 z-40 w-full">
+      <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+        <div className="flex items-center gap-4 md:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0">
+              <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
+              <div className="flex h-16 items-center gap-2 border-b px-6">
+                <Link href="/dashboard" className="flex items-center gap-2">
+                  <Image
+                    src="/logo.png"
+                    alt="AVERO Technology"
+                    width={32}
+                    height={32}
+                    className="rounded-lg"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-base leading-tight">AVERO</span>
+                    <span className="text-[10px] leading-none text-muted-foreground uppercase tracking-widest">
+                      Technology
+                    </span>
+                  </div>
                 </Link>
-              ))}
-            </nav>
-          </div>
+              </div>
+              <div className="flex flex-col gap-2 p-4">
+                {navigation.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (pathname.startsWith(`${item.href}/`) && item.href !== "/dashboard")
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-            </Button>
-
-            <Sheet>
-              <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <nav className="flex flex-col gap-4 mt-8">
-                  {navigation.map((item) => (
+                  return (
                     <Link key={item.name} href={item.href}>
-                      <Button variant="ghost" className="w-full justify-start">
+                      <Button
+                        variant={isActive ? "default" : "ghost"}
+                        className={cn("w-full justify-start gap-3", !isActive && "text-muted-foreground")}
+                      >
+                        <item.icon className="h-4 w-4" />
                         {item.name}
                       </Button>
                     </Link>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
+                  )
+                })}
+              </div>
+            </SheetContent>
+          </Sheet>
+          
+          <Link href="/dashboard" className="flex items-center gap-2 md:hidden">
+            <span className="font-bold text-lg">AVERO</span>
+          </Link>
+        </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <UserIcon className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{user.businessName}</span>
-                    <span className="text-xs text-muted-foreground">{user.email}</span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>Configuración</DropdownMenuItem>
-                <DropdownMenuItem onClick={handleSignOut}>Cerrar Sesión</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+        <div className="flex-1 md:hidden" />
+
+        {/* Global Search / Context could go here in the middle for desktop */}
+        <div className="hidden md:flex flex-1" />
+
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full" />
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full bg-secondary/50">
+                <UserIcon className="h-5 w-5 text-secondary-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="font-medium text-sm leading-none">{user.businessName}</p>
+                  <p className="text-xs text-muted-foreground leading-none">{user.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push("/dashboard/settings")}>
+                Configuración
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                Cerrar Sesión
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
