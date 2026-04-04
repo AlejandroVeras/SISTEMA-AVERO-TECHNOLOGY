@@ -12,17 +12,7 @@ export const metadata: Metadata = {
   description: 'Sistema de gestión de facturas, productos y clientes - AVERO Technology',
   generator: 'Next.js',
   icons: {
-    icon: [
-      {
-        url: '/LOGO.png',
-        sizes: '32x32',
-        type: 'image/png',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
+    icon: '/LOGO.png',
     apple: '/LOGO.png',
   },
 }
