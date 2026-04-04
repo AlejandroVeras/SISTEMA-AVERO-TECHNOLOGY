@@ -42,18 +42,8 @@ export function SignupForm() {
       setError(signUpError.message)
       setLoading(false)
     } else if (data.user) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: data.user.id,
-        business_name: businessName,
-      })
-
-      if (profileError) {
-        setError("Error al crear perfil: " + profileError.message)
-        setLoading(false)
-      } else {
-        router.push("/dashboard")
-        router.refresh()
-      }
+      router.push("/dashboard")
+      router.refresh()
     }
   }
 
