@@ -67,7 +67,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         
         {/* Encabezado Principal */}
@@ -79,12 +79,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">{invoice.invoiceNumber}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{invoice.invoiceNumber}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={isFullyPaid ? "default" : "outline"} className={isFullyPaid ? "bg-green-600" : ""}>
                   {isFullyPaid ? "Pagada" : `Pendiente: ${formatCurrency(balanceDue)}`}
                 </Badge>
-                <span className="text-slate-500 text-sm">• {invoice.customerName}</span>
+                <span className="text-muted-foreground text-sm">• {invoice.customerName}</span>
               </div>
             </div>
           </div>
@@ -109,18 +109,18 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div className="space-y-1">
-                    <p className="text-slate-500">Fecha de Emisión</p>
+                    <p className="text-muted-foreground">Fecha de Emisión</p>
                     <p className="font-medium">{formatDate(invoice.issueDate)}</p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-slate-500">Vencimiento</p>
+                    <p className="text-muted-foreground">Vencimiento</p>
                     <p className="font-medium">{invoice.dueDate ? formatDate(invoice.dueDate) : "N/A"}</p>
                   </div>
                 </div>
 
                 <div className="border rounded-lg overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 border-b">
+                    <thead className="bg-background border-b">
                       <tr>
                         <th className="p-3 font-semibold">Descripción</th>
                         <th className="p-3 text-right font-semibold">Cant.</th>
@@ -141,7 +141,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
                 <div className="flex justify-end pt-4">
                   <div className="w-64 space-y-2">
-                    <div className="flex justify-between text-sm text-slate-600">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Subtotal</span>
                       <span>{formatCurrency(invoice.subtotal)}</span>
                     </div>
@@ -151,11 +151,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                         <span>-{formatCurrency(invoice.discount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-sm text-slate-600">
+                    <div className="flex justify-between text-sm text-muted-foreground">
                       <span>ITBIS (18%)</span>
                       <span>{formatCurrency(invoice.itbis)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold border-t pt-2 text-slate-900">
+                    <div className="flex justify-between text-lg font-bold border-t pt-2 text-foreground">
                       <span>Total</span>
                       <span>{formatCurrency(invoice.total)}</span>
                     </div>
@@ -191,14 +191,14 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                         step="0.01" 
                         max={balanceDue} 
                         defaultValue={balanceDue}
-                        className="bg-white"
+                        className="bg-card"
                         required 
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="method">Método</Label>
                       <Select name="method" defaultValue="Efectivo">
-                        <SelectTrigger className="bg-white">
+                        <SelectTrigger className="bg-card">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -211,7 +211,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     <Input name="date" type="hidden" value={new Date().toISOString().split('T')[0]} />
                     <div className="space-y-2">
                       <Label htmlFor="reference">Referencia</Label>
-                      <Input name="reference" placeholder="Opcional" className="bg-white" />
+                      <Input name="reference" placeholder="Opcional" className="bg-card" />
                     </div>
                     <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
                       Aplicar Pago
@@ -225,7 +225,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <History className="h-5 w-5 text-slate-500" />
+                  <History className="h-5 w-5 text-muted-foreground" />
                   Historial de Pagos
                 </CardTitle>
               </CardHeader>
@@ -235,10 +235,10 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 ) : (
                   <div className="space-y-3">
                     {payments.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                      <div key={p.id} className="flex items-center justify-between p-3 border rounded-lg bg-card shadow-sm">
                         <div className="space-y-1">
-                          <p className="font-bold text-slate-900">{formatCurrency(p.amount)}</p>
-                          <p className="text-[10px] text-slate-500 uppercase font-semibold">{p.method} • {new Date(p.date).toLocaleDateString()}</p>
+                          <p className="font-bold text-foreground">{formatCurrency(p.amount)}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase font-semibold">{p.method} • {new Date(p.date).toLocaleDateString()}</p>
                         </div>
                         <PaymentReceiptPDF 
                           payment={p} 
@@ -252,11 +252,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 )}
                 
                 <div className="pt-4 mt-4 border-t space-y-2 text-sm">
-                  <div className="flex justify-between text-slate-500">
+                  <div className="flex justify-between text-muted-foreground">
                     <span>Total Pagado:</span>
                     <span className="text-green-600 font-bold">{formatCurrency(totalPaid)}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-slate-900 text-base">
+                  <div className="flex justify-between font-bold text-foreground text-base">
                     <span>Balance Pendiente:</span>
                     <span className={balanceDue > 0 ? "text-red-600" : "text-green-600"}>
                       {formatCurrency(balanceDue)}

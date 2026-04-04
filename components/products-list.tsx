@@ -49,7 +49,7 @@ export function ProductsList({ products }: ProductsListProps) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <p className="text-slate-600">No hay productos registrados aún</p>
+          <p className="text-muted-foreground">No hay productos registrados aún</p>
           <Button className="mt-4" onClick={() => router.push("/dashboard/products/new")}>
             Agregar Primer Producto
           </Button>
@@ -67,11 +67,11 @@ export function ProductsList({ products }: ProductsListProps) {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Package className="h-6 w-6 text-slate-600" />
+                    <Package className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-slate-900 truncate">{product.name}</h3>
-                    {product.sku && <p className="text-sm text-slate-600">SKU: {product.sku}</p>}
+                    <h3 className="font-semibold text-lg text-foreground truncate">{product.name}</h3>
+                    {product.sku && <p className="text-sm text-muted-foreground">SKU: {product.sku}</p>}
                   </div>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
@@ -85,17 +85,17 @@ export function ProductsList({ products }: ProductsListProps) {
               </div>
 
               <div className="space-y-3">
-                {product.description && <p className="text-sm text-slate-600 line-clamp-2">{product.description}</p>}
+                {product.description && <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>}
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-600">Precio:</span>
-                  <span className="font-bold text-lg text-slate-900">{formatCurrency(product.price)}</span>
+                  <span className="text-sm text-muted-foreground">Precio:</span>
+                  <span className="font-bold text-lg text-foreground">{formatCurrency(product.price)}</span>
                 </div>
 
                 {product.cost && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-600">Costo:</span>
-                    <span className="text-sm text-slate-900">{formatCurrency(product.cost)}</span>
+                    <span className="text-sm text-muted-foreground">Costo:</span>
+                    <span className="text-sm text-foreground">{formatCurrency(product.cost)}</span>
                   </div>
                 )}
 

@@ -42,7 +42,7 @@ export function CustomersList({ customers }: CustomersListProps) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <p className="text-slate-600">No hay clientes registrados aún</p>
+          <p className="text-muted-foreground">No hay clientes registrados aún</p>
           <Button className="mt-4" onClick={() => router.push("/dashboard/customers/new")}>
             Agregar Primer Cliente
           </Button>
@@ -64,9 +64,9 @@ export function CustomersList({ customers }: CustomersListProps) {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-slate-900">{customer.name}</h3>
+                    <h3 className="font-semibold text-lg text-foreground">{customer.name}</h3>
                     <div className="flex gap-2 mt-1">
-                      {customer.rnc && <p className="text-xs text-slate-600">RNC: {customer.rnc}</p>}
+                      {customer.rnc && <p className="text-xs text-muted-foreground">RNC: {customer.rnc}</p>}
                       {customer.financingAvailable && (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                           <TrendingUp className="h-3 w-3 mr-1" />
@@ -91,19 +91,19 @@ export function CustomersList({ customers }: CustomersListProps) {
 
                 <div className="space-y-2">
                   {customer.email && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="h-4 w-4" />
                       <span>{customer.email}</span>
                     </div>
                   )}
                   {customer.phone && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Phone className="h-4 w-4" />
                       <span>{customer.phone}</span>
                     </div>
                   )}
                   {customer.address && (
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <MapPin className="h-4 w-4" />
                       <span className="line-clamp-2">{customer.address}</span>
                     </div>
@@ -115,11 +115,11 @@ export function CustomersList({ customers }: CustomersListProps) {
                     <p className="text-xs font-semibold text-slate-700 mb-2">Financiamiento</p>
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="text-slate-600">Usado</span>
+                        <span className="text-muted-foreground">Usado</span>
                         <span className="font-semibold">{customer.financingUsed.toFixed(0)} DOP</span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-slate-600">Límite</span>
+                        <span className="text-muted-foreground">Límite</span>
                         <span className="font-semibold">{customer.financingLimit.toFixed(0)} DOP</span>
                       </div>
                       <div className="w-full bg-slate-200 rounded-full h-1.5 mt-2">

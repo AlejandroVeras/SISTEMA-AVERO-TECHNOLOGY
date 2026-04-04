@@ -21,11 +21,11 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Editar Factura</h1>
-          <p className="text-slate-600 mt-1">Actualiza la información de la factura</p>
+          <h1 className="text-3xl font-bold text-foreground">Editar Factura</h1>
+          <p className="text-muted-foreground mt-1">Actualiza la información de la factura</p>
         </div>
 
         <InvoiceForm invoice={invoice} customers={customers} products={products} />

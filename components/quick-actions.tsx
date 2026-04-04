@@ -46,7 +46,7 @@ export function QuickActions() {
             <div className={`${action.color} w-12 h-12 rounded-lg flex items-center justify-center`}>
               <action.icon className="h-6 w-6 text-white" />
             </div>
-            <span className="text-sm font-medium text-center text-slate-900">{action.label}</span>
+            <span className="text-sm font-medium text-center text-foreground">{action.label}</span>
           </CardContent>
         </Card>
       ))}

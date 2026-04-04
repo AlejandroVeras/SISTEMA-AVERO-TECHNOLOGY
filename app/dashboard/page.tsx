@@ -56,12 +56,12 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
 
       <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-slate-600 mt-1">Bienvenido de vuelta, {user.businessName}</p>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Bienvenido de vuelta, {user.businessName}</p>
         </div>
 
         <QuickActions />

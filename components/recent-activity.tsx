@@ -107,7 +107,7 @@ export async function RecentActivity() {
           <CardTitle>Actividad Reciente</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-muted-foreground">
             <p>No hay actividad reciente</p>
             <p className="text-sm mt-2">Comienza creando clientes, productos o facturas</p>
           </div>
@@ -126,12 +126,12 @@ export async function RecentActivity() {
           {recentActivities.map((activity, index) => (
             <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
               <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <activity.icon className="h-5 w-5 text-slate-600" />
+                <activity.icon className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-slate-900">{activity.title}</p>
-                <p className="text-sm text-slate-600">{activity.description}</p>
-                <p className="text-xs text-slate-500 mt-1">{activity.time}</p>
+                <p className="font-medium text-foreground">{activity.title}</p>
+                <p className="text-sm text-muted-foreground">{activity.description}</p>
+                <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
               </div>
               {activity.amount && (
                 <Badge variant="secondary" className="flex-shrink-0">

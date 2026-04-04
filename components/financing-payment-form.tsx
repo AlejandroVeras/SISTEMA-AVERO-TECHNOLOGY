@@ -124,7 +124,7 @@ export function FinancingPaymentForm({ customer }: FinancingPaymentFormProps) {
                     required
                     disabled={loading}
                   />
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-muted-foreground">
                     Deuda actual: {formatCurrency(customer.financingUsed)}
                   </p>
                 </div>

@@ -34,7 +34,7 @@ export function ExpensesCategoryChart({ data }: ExpensesCategoryChartProps) {
           <CardTitle>Gastos por Categoría</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[300px]">
-          <p className="text-slate-500">No hay gastos registrados</p>
+          <p className="text-muted-foreground">No hay gastos registrados</p>
         </CardContent>
       </Card>
     )
@@ -80,7 +80,7 @@ export function ExpensesCategoryChart({ data }: ExpensesCategoryChartProps) {
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                 <span className="text-slate-700">{category.category}</span>
               </div>
-              <span className="font-semibold text-slate-900">{formatCurrency(category.amount)}</span>
+              <span className="font-semibold text-foreground">{formatCurrency(category.amount)}</span>
             </div>
           ))}
         </div>

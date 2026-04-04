@@ -104,7 +104,7 @@ export function ExpensesList({ expenses }: ExpensesListProps) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <p className="text-slate-600">No hay gastos registrados aún</p>
+          <p className="text-muted-foreground">No hay gastos registrados aún</p>
           <Button className="mt-4" onClick={() => router.push("/dashboard/expenses/new")}>
             Registrar Primer Gasto
           </Button>
@@ -129,7 +129,7 @@ export function ExpensesList({ expenses }: ExpensesListProps) {
           return (
             <div key={monthYear}>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-slate-900 capitalize">{monthYear}</h2>
+                <h2 className="text-lg font-semibold text-foreground capitalize">{monthYear}</h2>
                 <Badge variant="secondary" className="text-base">
                   {formatCurrency(monthTotal)}
                 </Badge>
@@ -146,23 +146,23 @@ export function ExpensesList({ expenses }: ExpensesListProps) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-slate-900">{expense.description}</h3>
+                              <h3 className="font-semibold text-foreground">{expense.description}</h3>
                               <Badge variant="outline" className="text-xs">
                                 {expense.category}
                               </Badge>
                             </div>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-slate-600">
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                               <span>{formatDate(expense.date)}</span>
                               {expense.paymentMethod && <span>• {expense.paymentMethod}</span>}
                             </div>
                             {expense.notes && (
-                              <p className="text-sm text-slate-500 mt-1 line-clamp-1">{expense.notes}</p>
+                              <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{expense.notes}</p>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <p className="text-lg font-bold text-slate-900">{formatCurrency(expense.amount)}</p>
+                            <p className="text-lg font-bold text-foreground">{formatCurrency(expense.amount)}</p>
                           </div>
                           <div className="flex gap-1">
                             <Button

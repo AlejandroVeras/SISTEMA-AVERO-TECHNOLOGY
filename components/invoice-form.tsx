@@ -307,7 +307,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                         <SelectItem key={product.id} value={product.id}>
                           <div className="flex gap-2">
                             <span>{product.name}</span>
-                            <span className="text-slate-500">({formatCurrency(product.price)})</span>
+                            <span className="text-muted-foreground">({formatCurrency(product.price)})</span>
                           </div>
                         </SelectItem>
                       ))}
@@ -328,7 +328,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
                   {item.productId ? (
                     <p className="text-xs text-green-600 mt-1">✓ Nombre del producto: {item.description}</p>
                   ) : (
-                    <p className="text-xs text-slate-500 mt-1">Escribe una descripción o selecciona un producto</p>
+                    <p className="text-xs text-muted-foreground mt-1">Escribe una descripción o selecciona un producto</p>
                   )}
                 </div>
 
@@ -395,13 +395,13 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Subtotal:</span>
+                <span className="text-muted-foreground">Subtotal:</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
               
               {/* CAMPO DE DESCUENTO */}
               <div className="flex justify-between text-sm items-center">
-                <Label htmlFor="discount" className="text-slate-600">Descuento (DOP):</Label>
+                <Label htmlFor="discount" className="text-muted-foreground">Descuento (DOP):</Label>
                 <div className="w-32">
                    <Input
                     id="discount"
@@ -418,12 +418,12 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Importe Gravable:</span>
+                <span className="text-muted-foreground">Importe Gravable:</span>
                 <span className="font-medium">{formatCurrency(taxableAmount)}</span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-slate-600">ITBIS (18%):</span>
+                <span className="text-muted-foreground">ITBIS (18%):</span>
                 <span className="font-medium">{formatCurrency(itbis)}</span>
               </div>
               <div className="flex justify-between text-lg font-bold pt-2 border-t">

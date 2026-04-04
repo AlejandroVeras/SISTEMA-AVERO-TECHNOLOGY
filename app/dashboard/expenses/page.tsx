@@ -17,13 +17,13 @@ export default async function ExpensesPage() {
   const expenses = await getExpenses()
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
 
       <main className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Gastos</h1>
-            <p className="text-slate-600 mt-1">Registra y controla los gastos de tu negocio</p>
+            <h1 className="text-3xl font-bold text-foreground">Gastos</h1>
+            <p className="text-muted-foreground mt-1">Registra y controla los gastos de tu negocio</p>
           </div>
           <Button asChild>
             <Link href="/dashboard/expenses/new">

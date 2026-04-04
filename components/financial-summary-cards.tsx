@@ -56,14 +56,14 @@ export function FinancialSummaryCards({ summary }: FinancialSummaryCardsProps) {
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">{card.title}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
             <div className={`${card.bgColor} p-2 rounded-lg`}>
               <card.icon className={`h-4 w-4 ${card.color}`} />
             </div>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${card.color}`}>{card.value}</div>
-            <p className="text-xs text-slate-600 mt-1">{card.subtitle}</p>
+            <p className="text-xs text-muted-foreground mt-1">{card.subtitle}</p>
           </CardContent>
         </Card>
       ))}

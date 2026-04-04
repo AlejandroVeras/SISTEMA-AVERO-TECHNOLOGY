@@ -11,12 +11,12 @@ export default async function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
 
       <main className="max-w-3xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Configuración</h1>
-          <p className="text-slate-600 mt-1">Administra tu perfil y configuración de negocio</p>
+          <h1 className="text-3xl font-bold text-foreground">Configuración</h1>
+          <p className="text-muted-foreground mt-1">Administra tu perfil y configuración de negocio</p>
         </div>
 
         <Card>
@@ -27,11 +27,11 @@ export default async function SettingsPage() {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-slate-700">Correo Electrónico</label>
-              <p className="text-slate-900 mt-1">{user.email}</p>
+              <p className="text-foreground mt-1">{user.email}</p>
             </div>
             <div>
               <label className="text-sm font-medium text-slate-700">Nombre de Negocio</label>
-              <p className="text-slate-900 mt-1">{user.businessName}</p>
+              <p className="text-foreground mt-1">{user.businessName}</p>
             </div>
           </CardContent>
         </Card>
@@ -42,7 +42,7 @@ export default async function SettingsPage() {
             <CardDescription>Más opciones de configuración estarán disponibles pronto</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2 text-sm text-slate-600">
+            <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Editar información del perfil</li>
               <li>• Cambiar contraseña</li>
               <li>• Configuración de impuestos</li>

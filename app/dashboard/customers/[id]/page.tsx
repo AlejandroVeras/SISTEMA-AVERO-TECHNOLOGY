@@ -25,11 +25,11 @@ export default async function EditCustomerPage({ params }: { params: Promise<{ i
   const financingPayments = customer.financingAvailable ? await getFinancingPayments(id) : []
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-background">
       <main className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Editar Cliente</h1>
-          <p className="text-slate-600 mt-1">Actualiza la información del cliente</p>
+          <h1 className="text-3xl font-bold text-foreground">Editar Cliente</h1>
+          <p className="text-muted-foreground mt-1">Actualiza la información del cliente</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

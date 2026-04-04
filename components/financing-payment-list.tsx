@@ -99,7 +99,7 @@ export function FinancingPaymentList({ payments, customerName, customerEmail }: 
       <Card>
         <CardContent className="p-12 text-center">
           <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-          <p className="text-slate-600">No hay pagos registrados aún</p>
+          <p className="text-muted-foreground">No hay pagos registrados aún</p>
         </CardContent>
       </Card>
     )
@@ -114,13 +114,13 @@ export function FinancingPaymentList({ payments, customerName, customerEmail }: 
         <CardContent>
           <div className="space-y-3">
             {payments.map((payment) => (
-              <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-slate-50">
+              <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-background">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="font-semibold text-lg text-green-600">{formatCurrency(payment.amount)}</span>
                     <Badge variant="outline">{paymentMethodLabels[payment.paymentMethod] || payment.paymentMethod}</Badge>
                   </div>
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-muted-foreground">
                     <p>{formatDate(payment.date)}</p>
                     {payment.reference && <p className="text-xs">Ref: {payment.reference}</p>}
                   </div>

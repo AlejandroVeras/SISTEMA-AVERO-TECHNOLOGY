@@ -92,7 +92,7 @@ export function InvoicesList({ invoices }: InvoicesListProps) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <p className="text-slate-600">No hay facturas registradas aún</p>
+          <p className="text-muted-foreground">No hay facturas registradas aún</p>
           <Button className="mt-4" onClick={() => router.push("/dashboard/invoices/new")}>
             Crear Primera Factura
           </Button>
@@ -114,11 +114,11 @@ export function InvoicesList({ invoices }: InvoicesListProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-lg text-slate-900">{invoice.invoiceNumber}</h3>
+                      <h3 className="font-semibold text-lg text-foreground">{invoice.invoiceNumber}</h3>
                       <Badge className={getStatusColor(invoice.status)}>{getStatusLabel(invoice.status)}</Badge>
                     </div>
-                    <p className="text-slate-600 mb-1">{invoice.customerName}</p>
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+                    <p className="text-muted-foreground mb-1">{invoice.customerName}</p>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
                       <span>Emitida: {formatDate(invoice.issueDate)}</span>
                       {invoice.dueDate && <span>Vence: {formatDate(invoice.dueDate)}</span>}
                     </div>
@@ -126,8 +126,8 @@ export function InvoicesList({ invoices }: InvoicesListProps) {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-sm text-slate-600">Total</p>
-                    <p className="text-xl font-bold text-slate-900">{formatCurrency(invoice.total)}</p>
+                    <p className="text-sm text-muted-foreground">Total</p>
+                    <p className="text-xl font-bold text-foreground">{formatCurrency(invoice.total)}</p>
                   </div>
                   <div className="flex gap-1">
                     {/* Botón para ver detalle y acceder a exportar */}

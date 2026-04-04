@@ -1,5 +1,9 @@
+-- Limpiar tablas si existían previamente de forma incorrecta
+DROP TABLE IF EXISTS public.quote_items CASCADE;
+DROP TABLE IF EXISTS public.quotes CASCADE;
+
 -- Crear tabla de Cotizaciones
-CREATE TABLE IF NOT EXISTS public.quotes (
+CREATE TABLE public.quotes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
