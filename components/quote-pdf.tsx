@@ -4,13 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Download, Mail } from "lucide-react"
 import type { Quote } from "@/lib/data/quotes"
 
+import type { Profile } from "@/lib/data/profile"
+
 interface QuotePDFProps {
   quote: Quote
-  businessName: string
-  businessEmail: string
+  profile: Profile
 }
 
-export function QuotePDF({ quote, businessName, businessEmail }: QuotePDFProps) {
+export function QuotePDF({ quote, profile }: QuotePDFProps) {
   function formatCurrency(amount: number) {
     return new Intl.NumberFormat("es-DO", {
       style: "currency",
@@ -102,9 +103,12 @@ export function QuotePDF({ quote, businessName, businessEmail }: QuotePDFProps) 
           <div class="invoice-container">
             <div class="header">
               <div class="company-info">
-                <h1>${businessName}</h1>
-                <p><strong>Email:</strong> ${businessEmail}</p>
-                <!-- Opcional: <p><strong>Teléfono:</strong> [Teléfono]</p> -->
+                <h1>${profile.businessName}</h1>
+                ${profile.taxId ? `<p><strong>RNC:</strong> ${profile.taxId}</p>` : ''}
+                ${profile.phone ? `<p><strong>Teléfono:</strong> ${profile.phone}</p>` : ''}
+                ${profile.address ? `<p><strong>Dirección:</strong> ${profile.address}</p>` : ''}
+                ${profile.website ? `<p><strong>Web:</strong> ${profile.website}</p>` : ''}
+                <p><strong>Email:</strong> ${profile.email}</p>
               </div>
               <div class="invoice-info">
                 <h2>COTIZACIÓN</h2>
@@ -201,14 +205,14 @@ export function QuotePDF({ quote, businessName, businessEmail }: QuotePDFProps) 
   }
 
   function sendEmail() {
-    const subject = encodeURIComponent(`Cotización ${quote.quoteNumber} de ${businessName}`)
+    const subject = encodeURIComponent(`Cotización ${quote.quoteNumber} de ${profile.businessName}`)
     const body = encodeURIComponent(
       `Estimado/a ${quote.customerName},\n\n` +
       `Adjunto encontrará la propuesta comercial (Cotización ${quote.quoteNumber}) por un monto total de ${formatCurrency(quote.total)}.\n\n` +
       `Fecha de emisión: ${formatDate(quote.issueDate)}\n` +
       (quote.validUntil ? `Válida hasta: ${formatDate(quote.validUntil)}\n\n` : '\n') +
       `Quedamos a su disposición ante cualquier consulta o requerimiento adicional.\n\n` +
-      `Atentamente,\n${businessName}`
+      `Atentamente,\n${profile.businessName}`
     )
     
     window.location.href = `mailto:?subject=${subject}&body=${body}`

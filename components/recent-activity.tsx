@@ -11,6 +11,7 @@ type Activity = {
   description: string
   amount?: string
   time: string
+  dateObj: Date
   icon: any
 }
 
@@ -55,6 +56,7 @@ export async function RecentActivity() {
         description: `Factura ${invoice.invoiceNumber}`,
         amount: formatCurrency(invoice.total),
         time: getTimeAgo(invoice.updatedAt),
+        dateObj: invoice.updatedAt,
         icon: DollarSign,
       })
     } else {
@@ -64,6 +66,7 @@ export async function RecentActivity() {
         description: `Cliente: ${invoice.customerName}`,
         amount: formatCurrency(invoice.total),
         time: getTimeAgo(invoice.createdAt),
+        dateObj: invoice.createdAt,
         icon: FileText,
       })
     }
@@ -76,6 +79,7 @@ export async function RecentActivity() {
       title: "Nuevo cliente agregado",
       description: customer.name,
       time: getTimeAgo(customer.createdAt),
+      dateObj: customer.createdAt,
       icon: Users,
     })
   })
@@ -88,15 +92,13 @@ export async function RecentActivity() {
       description: expense.description,
       amount: formatCurrency(expense.amount),
       time: getTimeAgo(expense.createdAt),
+      dateObj: expense.createdAt,
       icon: Receipt,
     })
   })
 
-  // Sort by date and take the 5 most recent
-  activities.sort((a, b) => {
-    // This is a simple sort by the time string, in a real app you'd want to sort by actual dates
-    return a.time.localeCompare(b.time)
-  })
+  // Sort by date descending
+  activities.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime())
 
   const recentActivities = activities.slice(0, 5)
 
@@ -125,7 +127,7 @@ export async function RecentActivity() {
         <div className="space-y-4">
           {recentActivities.map((activity, index) => (
             <div key={index} className="flex items-start gap-4 pb-4 border-b last:border-0 last:pb-0">
-              <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-muted/50 rounded-lg flex items-center justify-center flex-shrink-0">
                 <activity.icon className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">

@@ -3,6 +3,7 @@ import { getUser } from "@/lib/auth"
 import { getInvoice } from "@/lib/data/invoices"
 import { getPayments, createPayment } from "@/lib/data/payments"
 
+import { getProfile } from "@/lib/data/profile"
 import { InvoicePDF } from "@/components/invoice-pdf"
 import { PaymentReceiptPDF } from "@/components/payment-receipt-pdf"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,9 +23,9 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   }
 
   const { id } = await params
-  const invoice = await getInvoice(id)
+  const [invoice, profile] = await Promise.all([getInvoice(id), getProfile()])
 
-  if (!invoice) {
+  if (!invoice || !profile) {
     notFound()
   }
 
@@ -163,7 +164,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                 </div>
                 
                 <div className="pt-6 border-t flex justify-center">
-                   <InvoicePDF invoice={invoice} businessName={user.businessName} businessEmail={user.email} />
+                   <InvoicePDF invoice={invoice} profile={profile} />
                 </div>
               </CardContent>
             </Card>
