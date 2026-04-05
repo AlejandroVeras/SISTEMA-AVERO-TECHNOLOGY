@@ -85,13 +85,13 @@ export function FinancingPaymentList({ payments, customerName, customerEmail }: 
       </div>
     `
 
-    html2pdf().set({
+    html2pdf().from(element).set({
       margin: 10,
       filename: `comprobante-pago-${payment.id}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2 },
       jsPDF: { orientation: "portrait", unit: "mm", format: "a4" },
-    }).save(element)
+    }).save()
   }
 
   if (payments.length === 0) {

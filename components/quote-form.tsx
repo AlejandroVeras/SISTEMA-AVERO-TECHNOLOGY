@@ -204,7 +204,7 @@ export function QuoteForm({ quote, customers, products }: QuoteFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="status">Estado de Cotización</Label>
-                <Select value={status} onValueChange={setStatus} disabled={loading}>
+                <Select value={status} onValueChange={(val: any) => setStatus(val)} disabled={loading}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>

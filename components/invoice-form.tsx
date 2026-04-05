@@ -209,7 +209,7 @@ export function InvoiceForm({ invoice, customers, products }: InvoiceFormProps) 
 
               <div className="space-y-2">
                 <Label htmlFor="status">Estado</Label>
-                <Select value={status} onValueChange={setStatus} disabled={loading}>
+                <Select value={status} onValueChange={(val: any) => setStatus(val)} disabled={loading}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
