@@ -21,8 +21,8 @@ export function ProductForm({ product }: ProductFormProps) {
   const router = useRouter()
   const [error, setError] = useState<string>("")
   const [loading, setLoading] = useState(false)
-  // Por defecto, TODOS los productos tracken inventario (true)
   const [trackInventory, setTrackInventory] = useState(product?.trackInventory !== false)
+  const [isPublic, setIsPublic] = useState(product?.isPublic || false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -33,9 +33,11 @@ export function ProductForm({ product }: ProductFormProps) {
       const formData = new FormData(e.currentTarget)
       // Ajustar valor del checkbox manual si es necesario, 
       // pero FormData suele capturarlo si tiene 'name' y está checked.
-      // Aseguramos que 'trackInventory' sea booleano para el formData si el backend lo requiere estricto
       if (!formData.get("trackInventory")) {
         formData.append("trackInventory", "false")
+      }
+      if (!formData.get("isPublic")) {
+        formData.append("isPublic", "false")
       }
 
       const result = product ? await updateProduct(product.id, formData) : await createProduct(formData)
@@ -139,8 +141,8 @@ export function ProductForm({ product }: ProductFormProps) {
               />
             </div>
 
-            <div className="space-y-3 md:col-span-2 pt-2">
-              <div className="flex items-center space-x-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="space-y-3 md:col-span-1 pt-2">
+              <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                 <Checkbox
                   id="trackInventory"
                   name="trackInventory"
@@ -150,10 +152,30 @@ export function ProductForm({ product }: ProductFormProps) {
                 />
                 <div className="flex-1">
                   <Label htmlFor="trackInventory" className="cursor-pointer font-semibold">
-                    ✓ Controlar inventario automáticamente
+                    ✓ Controlar inventario
                   </Label>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Desactiva esto solo si el stock es ilimitado o no lo necesitas controlar
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Reduce stock al vender
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 md:col-span-1 pt-2">
+              <div className="flex items-center space-x-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <Checkbox
+                  id="isPublic"
+                  name="isPublic"
+                  checked={isPublic}
+                  onCheckedChange={(checked) => setIsPublic(checked as boolean)}
+                  disabled={loading}
+                />
+                <div className="flex-1">
+                  <Label htmlFor="isPublic" className="cursor-pointer font-semibold">
+                    🌐 Público en Tienda
+                  </Label>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    Cualquiera podrá verlo en tu web
                   </p>
                 </div>
               </div>

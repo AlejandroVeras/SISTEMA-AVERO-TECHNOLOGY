@@ -12,6 +12,7 @@ export interface Product {
   cost?: number
   stockQuantity: number
   trackInventory: boolean
+  isPublic?: boolean
   category?: string
   createdAt: Date
   updatedAt: Date
@@ -44,6 +45,7 @@ export async function getProducts(): Promise<Product[]> {
     cost: p.cost ? Number(p.cost) : undefined,
     stockQuantity: p.stock_quantity,
     trackInventory: p.track_inventory,
+    isPublic: p.is_public || false,
     category: p.category,
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
@@ -73,6 +75,7 @@ export async function getProduct(id: string): Promise<Product | null> {
     cost: data.cost ? Number(data.cost) : undefined,
     stockQuantity: data.stock_quantity,
     trackInventory: data.track_inventory,
+    isPublic: data.is_public || false,
     category: data.category,
     createdAt: new Date(data.created_at),
     updatedAt: new Date(data.updated_at),
@@ -94,8 +97,8 @@ export async function createProduct(formData: FormData) {
   const price = Number.parseFloat(formData.get("price") as string)
   const cost = formData.get("cost") as string
   const stockQuantity = Number.parseInt(formData.get("stockQuantity") as string) || 0
-  // trackInventory por defecto es TRUE (habilitado)
   const trackInventory = formData.get("trackInventory") !== "false"
+  const isPublic = formData.get("isPublic") === "true" || formData.get("isPublic") === "on"
   const category = formData.get("category") as string
 
   if (!name || isNaN(price)) {
@@ -113,6 +116,7 @@ export async function createProduct(formData: FormData) {
       cost: cost ? Number.parseFloat(cost) : null,
       stock_quantity: stockQuantity,
       track_inventory: trackInventory,
+      is_public: isPublic,
       category: category || null,
     })
     .select()
@@ -143,8 +147,8 @@ export async function updateProduct(id: string, formData: FormData) {
 
   const cost = formData.get("cost") as string
   const stockQuantity = Number.parseInt(formData.get("stockQuantity") as string) || 0
-  // trackInventory por defecto es TRUE (habilitado)
   const trackInventory = formData.get("trackInventory") !== "false"
+  const isPublic = formData.get("isPublic") === "true" || formData.get("isPublic") === "on"
 
   const { error } = await supabase
     .from("products")
@@ -156,6 +160,7 @@ export async function updateProduct(id: string, formData: FormData) {
       cost: cost ? Number.parseFloat(cost) : null,
       stock_quantity: stockQuantity,
       track_inventory: trackInventory,
+      is_public: isPublic,
       category: (formData.get("category") as string) || null,
       updated_at: new Date().toISOString(),
     })
@@ -185,4 +190,48 @@ export async function deleteProduct(id: string) {
   }
 
   return { success: true }
+}
+
+export async function getPublicProducts(): Promise<Product[]> {
+  const supabase = await createClient()
+
+  // 1. Buscar el ID del administrador (Avero Technology) para no mezclar productos de otros inquilinos SaaS
+  const { data: adminProfile } = await supabase
+    .from("profiles")
+    .select("id")
+    .ilike("business_name", "%avero%")
+    .limit(1)
+    .single()
+
+  if (!adminProfile) return []
+
+  // 2. Extraer solo los productos públicos de ese administrador
+  // IMPORTANTE: Requiere política RLS `is_public = true` en public.products.
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_public", true)
+    .eq("user_id", adminProfile.id)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("fetch public products err:", error)
+    return []
+  }
+
+  return (data || []).map((p) => ({
+    id: p.id,
+    userId: p.user_id,
+    name: p.name,
+    description: p.description,
+    sku: p.sku,
+    price: Number(p.price),
+    cost: p.cost ? Number(p.cost) : undefined,
+    stockQuantity: p.stock_quantity,
+    trackInventory: p.track_inventory,
+    isPublic: p.is_public || false,
+    category: p.category,
+    createdAt: new Date(p.created_at),
+    updatedAt: new Date(p.updated_at),
+  }))
 }
