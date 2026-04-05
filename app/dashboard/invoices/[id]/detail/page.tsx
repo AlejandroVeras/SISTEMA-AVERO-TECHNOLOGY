@@ -30,9 +30,12 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   }
 
   const payments = await getPayments(id)
-  const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0)
-  const balanceDue = Math.max(0, invoice.total - totalPaid)
-  const isFullyPaid = balanceDue < 1
+  const sumPayments = payments.reduce((sum, p) => sum + p.amount, 0)
+  const isStatusPaid = invoice.status === "paid" // Si el usuario la marcó como Pagada desde la creación/edición
+  const isFullyPaid = isStatusPaid || (sumPayments >= invoice.total - 0.1)
+  
+  const totalPaid = isStatusPaid ? Math.max(sumPayments, invoice.total) : sumPayments
+  const balanceDue = isFullyPaid ? 0 : Math.max(0, invoice.total - totalPaid)
 
   function formatCurrency(amount: number) {
     return new Intl.NumberFormat("es-DO", {
