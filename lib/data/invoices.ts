@@ -28,6 +28,7 @@ export interface Invoice {
   discount: number
   itbis: number
   total: number
+  applyFinancing: boolean
   notes?: string
   items: InvoiceItem[]
   createdAt: Date
@@ -126,6 +127,7 @@ export async function getInvoices(): Promise<Invoice[]> {
     discount: Number(inv.discount || 0),
     itbis: Number(inv.itbis),
     total: Number(inv.total),
+    applyFinancing: Boolean(inv.apply_financing),
     notes: inv.notes,
     items: (itemsData || [])
       .filter((item) => item.invoice_id === inv.id)
@@ -178,6 +180,7 @@ export async function getInvoice(id: string): Promise<Invoice | null> {
     discount: Number(invoiceData.discount || 0),
     itbis: Number(invoiceData.itbis),
     total: Number(invoiceData.total),
+    applyFinancing: Boolean(invoiceData.apply_financing),
     notes: invoiceData.notes,
     items: (itemsData || []).map((item) => ({
       id: item.id,
@@ -335,7 +338,7 @@ export async function updateInvoice(
   // Obtener factura anterior para comparar cambios de financiamiento
   const { data: oldInvoiceData } = await supabase
     .from("invoices")
-    .select("customer_id, total, status")
+    .select("customer_id, total, status, apply_financing")
     .eq("id", id)
     .eq("user_id", user.id)
     .single()
@@ -363,11 +366,21 @@ export async function updateInvoice(
     }
   }
 
-  // --- LÓGICA DE FINANCIAMIENTO: REVERTIR DEUDA ANTERIOR ---
-  if (oldInvoiceData?.customer_id && oldInvoiceData.status !== "draft") {
-    // Solo si la factura anterior tenía financiamiento activo (necesitarías agregar un campo en la tabla)
-    // Por ahora, revertimos si el cliente tiene financiamiento habilitado
-    await updateCustomerFinancing(supabase, oldInvoiceData.customer_id, -oldInvoiceData.total)
+  // --- LÓGICA DE FINANCIAMIENTO: MATEMÁTICA DIFERENCIAL ---
+  // Calculamos la deuda anterior real aportada
+  const oldFinancingAmt = (oldInvoiceData?.customer_id === data.customerId && oldInvoiceData?.status !== "draft" && oldInvoiceData?.apply_financing)
+    ? oldInvoiceData.total
+    : 0;
+  
+  // Calculamos la deuda nueva que aportará
+  const newFinancingAmt = (data.customerId && data.status !== "draft" && data.applyFinancing)
+    ? total
+    : 0;
+
+  const financingDelta = newFinancingAmt - oldFinancingAmt;
+
+  if (data.customerId && financingDelta !== 0) {
+    await updateCustomerFinancing(supabase, data.customerId, financingDelta)
   }
 
   const { error: updateError } = await supabase
@@ -414,10 +427,8 @@ export async function updateInvoice(
     }
   }
 
-  // --- LÓGICA DE FINANCIAMIENTO: ACTUALIZAR NUEVA DEUDA ---
-  if (data.customerId && data.status !== "draft" && data.applyFinancing) {
-    await updateCustomerFinancing(supabase, data.customerId, total)
-  }
+  // La matemática diferencial ya se encargó de actualizar el financiamiento, 
+  // no necesitamos actualizar toda la deuda de nuevo.
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")
@@ -438,7 +449,7 @@ export async function deleteInvoice(id: string) {
   // Obtener datos de la factura antes de borrarla
   const { data: invoiceData } = await supabase
     .from("invoices")
-    .select("customer_id, total, status")
+    .select("customer_id, total, status, apply_financing")
     .eq("id", id)
     .eq("user_id", user.id)
     .single()
@@ -458,7 +469,7 @@ export async function deleteInvoice(id: string) {
   }
 
   // --- LÓGICA DE FINANCIAMIENTO: REVERTIR DEUDA ANTES DE BORRAR ---
-  if (invoiceData?.customer_id && invoiceData.status !== "draft") {
+  if (invoiceData?.customer_id && invoiceData.status !== "draft" && invoiceData.apply_financing) {
     await updateCustomerFinancing(supabase, invoiceData.customer_id, -invoiceData.total)
   }
 
@@ -481,6 +492,19 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
 
   if (!user) throw new Error("Unauthorized")
 
+  // Obtener datos de la factura para verificar financiamiento
+  const { data: invoice } = await supabase
+    .from("invoices")
+    .select("customer_id, total, status, apply_financing")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+
+  if (!invoice) return { error: "Invoice not found" }
+
+  const oldStatus = invoice.status;
+  const newStatus = status;
+
   const { error } = await supabase
     .from("invoices")
     .update({
@@ -491,6 +515,17 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
     .eq("user_id", user.id)
 
   if (error) return { error: error.message }
+
+  // Ajustar financiamiento si cambia desde/hacia draft
+  if (invoice.customer_id && invoice.apply_financing) {
+    if (oldStatus === "draft" && newStatus !== "draft") {
+      // Salió del borrador, afecta el límite
+      await updateCustomerFinancing(supabase, invoice.customer_id, invoice.total)
+    } else if (oldStatus !== "draft" && newStatus === "draft") {
+      // Regresó a borrador, devuelve el límite
+      await updateCustomerFinancing(supabase, invoice.customer_id, -invoice.total)
+    }
+  }
 
   revalidatePath("/dashboard")
   revalidatePath("/dashboard/invoices")

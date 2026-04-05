@@ -69,30 +69,29 @@ export async function createPayment(data: {
 
   if (error) return { error: error.message }
 
-  // 3. Si el cliente tiene financiamiento, reducir su deuda y registrar en financing_payments
-  if (invoice.customer_id) {
+  // 3. SOLO SI la factura aplicó financiamiento, reducir la deuda del cliente y registrar en financing_payments
+  if (invoice.customer_id && invoice.apply_financing) {
     const { data: customer } = await supabase
       .from("customers")
       .select("financing_available, financing_used")
       .eq("id", invoice.customer_id)
       .single()
 
-    if (customer && customer.financing_available && customer.financing_used > 0) {
+    if (customer && customer.financing_available) {
       const newFinancingUsed = Math.max(0, customer.financing_used - data.amount)
       await supabase
         .from("customers")
         .update({ financing_used: newFinancingUsed })
         .eq("id", invoice.customer_id)
 
-      // Registrar el pago en financing_payments (sin depender de apply_financing)
-      // Si el cliente tiene financiamiento y hace un pago, registrarlo en su historial
+      // Registrar el pago en financing_payments
       await supabase.from("financing_payments").insert({
         customer_id: invoice.customer_id,
         amount: data.amount,
         date: data.date,
         payment_method: data.method,
         reference: data.reference,
-        notes: `Pago de factura #${data.invoiceId.slice(0, 8)}${data.notes ? ` - ${data.notes}` : ""}`
+        notes: `Pago parcial Factura #${data.invoiceId.slice(0, 8)}${data.notes ? ` - ${data.notes}` : ""}`
       })
     }
   }
@@ -121,14 +120,27 @@ export async function createPayment(data: {
 
 export async function deletePayment(id: string, invoiceId: string) {
     const supabase = await createClient()
+
+    // Rescatar datos del pago y factura antes de eliminar
+    const { data: payment } = await supabase.from("payments").select("amount").eq("id", id).single()
+    const { data: invoice } = await supabase.from("invoices").select("customer_id, apply_financing").eq("id", invoiceId).single()
+
     const { error } = await supabase.from("payments").delete().eq("id", id)
     
     if (error) return { error: error.message }
 
+    // Revertir descuento de deuda si aplicaba financiamiento
+    if (invoice?.customer_id && invoice?.apply_financing && payment?.amount) {
+      const { data: customer } = await supabase.from("customers").select("financing_available, financing_used").eq("id", invoice.customer_id).single()
+      
+      if (customer && customer.financing_available) {
+        const revertedFinancingUsed = customer.financing_used + payment.amount
+        await supabase.from("customers").update({ financing_used: revertedFinancingUsed }).eq("id", invoice.customer_id)
+      }
+    }
+
     // Al borrar un pago, la factura podría dejar de estar "pagada", 
-    // pero por seguridad dejaremos que el usuario cambie el estado manualmente si es necesario,
-    // o podríamos recalcular. Por ahora, solo revalidamos.
-    
+    // pero por seguridad dejaremos que el usuario cambie el estado manualmente si es necesario.
     revalidatePath(`/dashboard/invoices/${invoiceId}`)
     return { success: true }
 }

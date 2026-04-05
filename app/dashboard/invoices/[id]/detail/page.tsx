@@ -80,9 +80,16 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
               </Link>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{invoice.invoiceNumber}</h1>
+              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                {invoice.invoiceNumber}
+                {invoice.applyFinancing && (
+                  <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200">
+                    💳 Factura a Crédito
+                  </Badge>
+                )}
+              </h1>
               <div className="flex items-center gap-2 mt-1">
-                <Badge variant={isFullyPaid ? "default" : "outline"} className={isFullyPaid ? "bg-green-600" : ""}>
+                <Badge variant={isFullyPaid ? "default" : "outline"} className={isFullyPaid ? "bg-emerald-500" : ""}>
                   {isFullyPaid ? "Pagada" : `Pendiente: ${formatCurrency(balanceDue)}`}
                 </Badge>
                 <span className="text-muted-foreground text-sm">• {invoice.customerName}</span>
@@ -181,6 +188,11 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
                     <CreditCard className="h-5 w-5 text-blue-600" />
                     Registrar Pago
                   </CardTitle>
+                  {invoice.applyFinancing && (
+                    <p className="text-xs text-indigo-600 mt-1 mt-2 font-medium bg-indigo-50 p-2 rounded border border-indigo-100">
+                      ℹ️  Esta factura es a crédito. Al añadir pagos aquí, el balance global de la línea de crédito del cliente reducirá al instante para mantener su contabilidad cuadrada.
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
                   <form action={registerPayment} className="space-y-4">

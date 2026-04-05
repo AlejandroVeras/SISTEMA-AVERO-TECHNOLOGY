@@ -38,12 +38,14 @@ export function CustomerFinancing({ customer }: CustomerFinancingProps) {
             <p className="font-bold text-lg">{formatCurrency(customer.financingLimit)}</p>
           </div>
           <div>
-            <p className="text-gray-600 text-xs font-medium mb-1">FINANCIAMIENTO USADO</p>
-            <p className="font-bold text-lg text-orange-600">{formatCurrency(customer.financingUsed)}</p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs font-medium mb-1">FINANCIAMIENTO USADO</p>
+            <p className={`font-bold text-lg ${utilisationPercentage >= 90 ? "text-rose-600 dark:text-rose-500" : "text-amber-600 dark:text-amber-500"}`}>
+              {formatCurrency(customer.financingUsed)}
+            </p>
           </div>
           <div>
-            <p className="text-gray-600 text-xs font-medium mb-1">BALANCE DISPONIBLE</p>
-            <p className={`font-bold text-lg ${availableBalance >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <p className="text-gray-600 dark:text-gray-400 text-xs font-medium mb-1">BALANCE DISPONIBLE</p>
+            <p className={`font-bold text-lg ${availableBalance >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
               {formatCurrency(Math.max(0, availableBalance))}
             </p>
           </div>
