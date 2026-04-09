@@ -11,7 +11,8 @@ import {
   Package, 
   Receipt, 
   Settings, 
-  Users 
+  Users,
+  Ticket
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -26,6 +27,7 @@ export function DashboardSidebar() {
     { name: "Cotizaciones", href: "/dashboard/quotes", icon: FileText },
     { name: "Facturas", href: "/dashboard/invoices", icon: Receipt },
     { name: "Gastos", href: "/dashboard/expenses", icon: CreditCard },
+    { name: "Tickets", href: "/dashboard/tickets", icon: Ticket },
     { name: "Reportes", href: "/dashboard/reports", icon: BarChart3 },
     { name: "Configuración", href: "/dashboard/settings", icon: Settings },
   ]
